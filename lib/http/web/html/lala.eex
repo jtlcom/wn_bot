@@ -1,0 +1,39 @@
+<div class="transTable">
+    <div id="table" align="left">
+        <span  style="line-height:30px;">实际/目标机器人数：<%= onlines %> / <%= total_num %></span>
+        <table class="table table-blue">
+            <caption style="color:blue; text-align:center; line-height:50px;"><font size="5">事务统计数据</font></caption>
+            <thead style="line-height:32px;">
+                <tr>
+                    <th align="center" style="min-width:50px;">序号</th>
+                    <th style="min-width:90px; max-width:250px;" align="center">事务名</th>
+                    <th align="center" style="min-width:80px;">总数</th>
+                    <th align="center" style="min-width:80px;">最大耗时</th>
+                    <th align="center" style="min-width:80px;">最小耗时</th>
+                    <th align="center" style="min-width:80px;">平均耗时</th>
+                    <th align="center" style="min-width:80px;">50%耗时</th>
+                    <th align="center" style="min-width:80px;">75%耗时</th>
+                    <th align="center" style="min-width:80px;">90%耗时</th>
+                    <th align="center" style="min-width:80px;">95%耗时</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <%= for event <- events do %>
+                    <tr>
+                        <td align="center" style="min-width:50px;"><%= event[:eid] %></td>
+                        <td style="min-width:90px; max-width:250px;" align="center">"<%= event[:name] %>"</td>
+                        <td align="center" style="min-width:80px;"><%= event[:count] %></td>
+                        <td align="center" style="min-width:80px;"><%= event[:max_consume] %></td>
+                        <td align="center" style="min-width:80px;"><%= event[:min_consume] %></td>
+                        <td align="center" style="min-width:80px;"><%= event[:avg_consume] %></td>
+                        <td align="center" style="min-width:80px;"><%= event[:fifty] %></td>
+                        <td align="center" style="min-width:80px;"><%= event[:seventy_five] %></td>
+                        <td align="center" style="min-width:80px;"><%= event[:ninty] %></td>
+                        <td align="center" style="min-width:80px;"><%= event[:ninty_five] %></td>
+                    </tr>
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+</div>

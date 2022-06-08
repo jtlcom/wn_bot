@@ -1,0 +1,5 @@
+@fly_to_pos 1 423001 101 69
+
+WildBossZone.change_pos 101, 69
+WildBossZone.enter 423001
+Equipment.equip()
