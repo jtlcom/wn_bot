@@ -5,7 +5,7 @@ defmodule PressureTest.MixProject do
     [
       app: :pressure_test,
       version: "0.1.0",
-      elixir: "~> 1.6",
+      elixir: "~> 1.13",
       start_permanent: Mix.env() == :dev,
       deps: deps()
     ]
@@ -47,7 +47,7 @@ defmodule PressureTest.MixProject do
       {:logger_file_backend, "~> 0.0.10"},
       {:tzdata, "~> 0.5.19"},
       {:plug_cowboy, "~> 2.0"},
-      {:eex_html, "~> 0.2.0"}
+      {:eex_html, git: "https://github.com/CrowdHailer/eex_html"}
     ]
   end
 end

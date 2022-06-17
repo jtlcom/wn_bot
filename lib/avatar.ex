@@ -101,7 +101,7 @@ defmodule Avatar do
   @dead_state 5
   @do_nothing 8
   @gm_equips %{1 => [201999992], 2 => [201999993], 3 => [201999994]}
-  @packet 4
+  @packet 2
 
   def start_link(args, opts \\ []) do
     GenServer.start_link(__MODULE__, args, opts)
@@ -134,7 +134,7 @@ defmodule Avatar do
     if type == :init_robot do
       Process.put(:robot_type, :init_robot)
       name = "zwhost_#{id}"
-      Client.send_msg(conn, ["account:auth", 0, name])
+      Client.send_msg(conn, ["login", name])
       Process.put(1, Utils.timestamp(:ms))
       # MsgCounter.res_onlines_add()
       Process.send_after(self(), :login_out, trunc(StartConfig.leave_after() * 60 * 1000))
@@ -169,6 +169,7 @@ defmodule Avatar do
   def handle_info({:tcp, _, data}, %{enter_count: enter_count, class: class} = player) do
     MsgCounter.recv_count_add()
     decoded = DropMsg.match(data)
+    IO.puts "decoded: #{inspect decoded}"
 
     # case decoded do
     #   ["evt" | events]->
@@ -318,7 +319,7 @@ defmodule Avatar do
 
             # 增加时装并穿戴
             {add_msgs, active_msgs, wear_msgs} = Dress.items(player.class)
-            (add_msgs ++ active_msgs ++ wear_msgs) 
+            (add_msgs ++ active_msgs ++ wear_msgs)
             |> Enum.reduce(1500, fn msg, delay ->
               Process.send_after(self(), {:reply, msg}, delay)
               delay + 100
@@ -326,7 +327,7 @@ defmodule Avatar do
 
             # #IO.inspect "random_act_auction"
             # Client.send_msg(player.conn, ["gm:random_act_auction", 118, 2])
-            # Client.send_msg(player.conn, ["msg:auth", player_id])     # 聊天认证 
+            # Client.send_msg(player.conn, ["msg:auth", player_id])     # 聊天认证
 
             # 创建军团
             # Process.sleep(100)
@@ -664,7 +665,7 @@ defmodule Avatar do
 
   def handle_info({:change_pos, x, y}, player) do
     reply_self(["fly_to_pos", 1, player.scene_id, x, y])
-    {:noreply, %{player | 
+    {:noreply, %{player |
         state: @born_state,
         move_path: [],
         motion: Motion.init(%{x: x, y: y})
@@ -674,13 +675,13 @@ defmodule Avatar do
 
   def handle_info(:gm_equip, %{bag: bag, class: class} = player) do
     with gm_equip_ids = Application.get_env(:pressure_test, :equipments, @gm_equips) |> Map.get(class, []),
-      idxes <- bag 
-      |> Enum.map(fn 
+      idxes <- bag
+      |> Enum.map(fn
         {idx, %{id: e_id}} ->
           e_id in gm_equip_ids && {idx, e_id} || nil
         _ ->
           nil
-      end) 
+      end)
       |> Enum.reject(&is_nil/1),
       true <- idxes != []
     do
@@ -705,13 +706,13 @@ defmodule Avatar do
 
   def handle_info({:gm_equip_random, num}, %{bag: bag, class: class} = player) do
     with gm_equip_ids = Application.get_env(:pressure_test, :equipments, @gm_equips) |> Map.get(class, []),
-      idxes <- bag 
-      |> Enum.map(fn 
+      idxes <- bag
+      |> Enum.map(fn
         {idx, %{id: e_id}} ->
           e_id in gm_equip_ids && {idx, e_id} || nil
         _ ->
           nil
-      end) 
+      end)
       |> Enum.reject(&is_nil/1)
       |> Enum.take_random(num),
       true <- idxes != []
@@ -910,11 +911,11 @@ defmodule Avatar do
       end)
       # |> IO.inspect
       |> Enum.reject(&is_nil/1)
-      
+
     # IO.inspect "#{inspect can_add_group_ids}, id is : #{id}, group_index is : #{Process.get(:group_index, 0)}"
     # IO.inspect Process.get(:group_index, 0)
-    
-    # |> IO.inspect 
+
+    # |> IO.inspect
     # if can_add_group_id != nil do
       # Process.put(:can_add_group_id, can_add_group_id)
       Enum.map(can_add_group_ids, fn can_add_group_id ->
@@ -1205,7 +1206,7 @@ defmodule Avatar do
 
   def handle_cast({:change_pos, x, y}, player) do
     reply_self(["fly_to_pos", 1, player.scene_id, x, y])
-    {:noreply, %{player | 
+    {:noreply, %{player |
         state: @born_state,
         move_path: [],
         motion: Motion.init(%{x: x, y: y})
@@ -1215,13 +1216,13 @@ defmodule Avatar do
 
   def handle_cast(:gm_equip, %{bag: bag, class: class} = player) do
     with gm_equip_ids = Application.get_env(:pressure_test, :equipments, @gm_equips) |> Map.get(class, []),
-      idxes <- bag 
-      |> Enum.map(fn 
+      idxes <- bag
+      |> Enum.map(fn
         {idx, %{id: e_id}} ->
           e_id in gm_equip_ids && {idx, e_id} || nil
         _ ->
           nil
-      end) 
+      end)
       |> Enum.reject(&is_nil/1),
       true <- idxes != []
     do
@@ -1246,13 +1247,13 @@ defmodule Avatar do
 
   def handle_cast({:gm_equip_random, num}, %{bag: bag, class: class} = player) do
     with gm_equip_ids = Application.get_env(:pressure_test, :equipments, @gm_equips) |> Map.get(class, []),
-      idxes <- bag 
-      |> Enum.map(fn 
+      idxes <- bag
+      |> Enum.map(fn
         {idx, %{id: e_id}} ->
           e_id in gm_equip_ids && {idx, e_id} || nil
         _ ->
           nil
-      end) 
+      end)
       |> Enum.reject(&is_nil/1)
       |> Enum.take_random(num),
       true <- idxes != []
@@ -1503,15 +1504,15 @@ defmodule Avatar do
       [
         _entity_type, _name, _gene, _body_state, _mounting_id,
         _title, _appellation, _nobility, _pk_info, _pk_mode
-      ] = _traits, 
+      ] = _traits,
       [
         _level, x, y, _forward, _health, _move_speed, hp,
         _pet_inbody_hp, _pet_inbody_health, _dead_pet_num, _prestige
-      ] = _stats, 
+      ] = _stats,
       [
         camp, _team_id, _group_id, _group_name, _member_type, _second_member_type,
         _family_name, _family_job
-      ] = _socials, 
+      ] = _socials,
       %{
         "bl" => _buff_list,
         "et" => _exterior,
@@ -1520,7 +1521,7 @@ defmodule Avatar do
     ],
     player
   ) do
-    # # IO.inspect "appear player" 
+    # # IO.inspect "appear player"
     SceneData.save_player(other_player_id, %{
       id: other_player_id,
       pos: {x, y},
@@ -1538,7 +1539,7 @@ defmodule Avatar do
   #   ] = lala,
   #   player
   # ) do
-    
+
   #   IO.inspect lala
 
   #   player
@@ -1627,10 +1628,10 @@ defmodule Avatar do
   end
 
   def handle_event(["bag:gain", _, gained], player) do
-    player 
-    |> Map.put(:bag, player.bag 
-                     |> Map.merge(gained 
-                                  |> Enum.map(fn {iii, eee} -> 
+    player
+    |> Map.put(:bag, player.bag
+                     |> Map.merge(gained
+                                  |> Enum.map(fn {iii, eee} ->
                                     {iii, eee |> GameDef.to_atom_key()}
                                   end)
                                   |> Map.new()

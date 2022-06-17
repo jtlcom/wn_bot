@@ -30,14 +30,14 @@ defmodule StartConfig do
 
   def save_config() do
     cfgs = %{
-      ip: '150.109.20.19' |> List.to_string, 
-      port: 2256, 
-      start_id: 1, 
-      start_num: 5, 
-      chat_num: 0, 
-      need_move: false, 
-      path_find_strategy: Atom.to_string(:not_fight), 
-      cowboy_port: 9999, 
+      ip: '172.18.188.183' |> List.to_string,
+      port: 6666,
+      start_id: 1,
+      start_num: 5,
+      chat_num: 0,
+      need_move: false,
+      path_find_strategy: Atom.to_string(:not_fight),
+      cowboy_port: 9999,
       robot_gene: [11, 22, 32],
       strategy: 'once_time' |> List.to_string,
       leave_after: 120,
@@ -76,13 +76,13 @@ defmodule StartConfig do
   end
 
   def server_ip_port() do
-    [get_config(:ip, '127.0.0.1'), get_config(:port, 2256)]
+    [get_config(:ip, '127.0.0.1'), get_config(:port, 6666)]
   end
 
   def need_move?() do
     get_config(:need_move, false)
   end
-  
+
   def strategy() do
     get_config(:strategy, "once_time")
   end
