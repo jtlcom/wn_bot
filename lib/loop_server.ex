@@ -26,7 +26,7 @@ defmodule LoopServer do
     GenServer.start_link(__MODULE__, :ok, [name: name])
   end
 
-  def init(:ok) do    
+  def init(:ok) do
     {:ok, %{state: :wait, count: 0}}
   end
 
@@ -40,7 +40,7 @@ defmodule LoopServer do
     Process.send_after(self(), :enter_frame, @per_sec * 1000)
     {:noreply, state}
   end
-  
+
   def handle_info(:msg_begin_together, state) do
     # IO.inspect "broadcast msg_begin_together!"
     # # Realm.broadcast(:msg_begin_together)
@@ -48,7 +48,6 @@ defmodule LoopServer do
     # IO.inspect "create group"
     # need_group && Group.create_group({:by_num, Application.get_env(:pressure_test, :create_group_num, 100)})
     # IO.inspect "join group"
-    # need_group && Group.join_group_by_index(Application.get_env(:pressure_test, :from_group_index, 0))
     IO.inspect "auto msg reply begin together ~~~"
     Realm.broadcast_all_interval(:msg_begin_together, Application.get_env(:pressure_test, :per_enter, 1), 50)
     {:noreply, state}
@@ -57,8 +56,6 @@ defmodule LoopServer do
   def handle_info(:start_move, state) do
     IO.inspect "start move"
     # Realm.broadcast(:msg_begin_together)
-    # Realm.broadcast_all_interval({:set_robot_state, 0}, 200, 1000)
-    Tool.move()
     {:noreply, state}
   end
 

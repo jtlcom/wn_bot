@@ -24,7 +24,7 @@ defmodule Realm do
   def broadcast_each_delay(msg, delay \\ 0) do
     Supervisor.which_children(Avatars)
     |> Enum.each(fn {_, pid, _, _} ->
-      # spawn(fn -> 
+      # spawn(fn ->
         GenServer.cast(pid, msg)
         (delay > 0) && Process.sleep(delay)
       # end)
@@ -32,9 +32,10 @@ defmodule Realm do
   end
 
   def broadcast(msg) do
+    IO.puts "123"
     Supervisor.which_children(Avatars)
     |> Enum.each(fn {_, pid, _, _} ->
-      # spawn(fn -> 
+      # spawn(fn ->
         GenServer.cast(pid, msg)
         # Process.sleep(1000)
       # end)
@@ -44,7 +45,7 @@ defmodule Realm do
   def broadcast(msg, strategy) do
     get_lines_avatars(strategy)
     |> Enum.each(fn pid ->
-      spawn(fn -> 
+      spawn(fn ->
         GenServer.cast(pid, msg)
       end)
     end)
@@ -58,7 +59,7 @@ defmodule Realm do
     |> Enum.with_index(1)
     |> Enum.each(fn {slice, slice_index} ->
       Enum.each(slice, fn pid ->
-        spawn(fn -> 
+        spawn(fn ->
           GenServer.cast(pid, msg)
         end)
       end)
@@ -66,10 +67,10 @@ defmodule Realm do
       is_begin? && Upload.log_begin("slice broadcast begin over, slice index: #{slice_index}, slice_len: #{inspect length(slice)}, slice: #{inspect slice, pretty: true}")
     end)
   end
- 
+
   def broadcast_avatars_handle(msg, strategy) do
     get_lines_avatars(strategy)
-    |> Enum.each(fn pid -> 
+    |> Enum.each(fn pid ->
       Process.sleep(1)
       GenServer.cast(pid, msg)
     end)
@@ -77,7 +78,7 @@ defmodule Realm do
 
   def broadcast_avatars_handle_after(msg, strategy, delay \\ 200) do
     get_lines_avatars(strategy)
-    |> Enum.each(fn pid -> 
+    |> Enum.each(fn pid ->
       Process.sleep(delay)
       GenServer.cast(pid, msg)
     end)
@@ -87,30 +88,30 @@ defmodule Realm do
   def broadcast_avatars(msg, strategy) do
     get_lines_avatars(strategy)
     |> Enum.with_index()
-    |> Enum.each(fn {pid, index} -> 
+    |> Enum.each(fn {pid, index} ->
       IO.inspect {pid, index}
       Process.sleep(10)
-      GenServer.cast(pid, {:reply, msg}) 
+      GenServer.cast(pid, {:reply, msg})
     end)
   end
 
   def broadcast_chat_robot(msg) do
     get_lines_avatars(:chat)
-    |> Enum.each(fn pid -> 
-      GenServer.cast(pid, msg) 
+    |> Enum.each(fn pid ->
+      GenServer.cast(pid, msg)
     end)
   end
 
   def broadcast_avatars_delay(msg, strategy, intervl \\ 5) do
     get_lines_avatars(strategy)
-    |> Enum.reduce(0, fn pid, num -> 
-      GenServer.cast(pid, {:reply, msg, num * intervl}) 
+    |> Enum.reduce(0, fn pid, num ->
+      GenServer.cast(pid, {:reply, msg, num * intervl})
       num + 1
     end)
   end
 
   def sendto_server_by_one_of_avatars(msg) do
-    avatars = Supervisor.which_children(Avatars) 
+    avatars = Supervisor.which_children(Avatars)
     if avatars != [] do
       {_, pid, _, _} = avatars |> Enum.random
       GenServer.cast(pid, {:reply, msg})
@@ -124,7 +125,7 @@ defmodule Realm do
       Guid.whereis(id)
     end)
     |> Enum.filter(&(is_pid(&1)))
-  end 
+  end
 
   def get_lines_avatars({:by_num, from_id, num}) do
     from_id..(from_id + num)
@@ -132,7 +133,7 @@ defmodule Realm do
       Guid.whereis(id)
     end)
     |> Enum.filter(&(is_pid(&1)))
-  end 
+  end
 
   def get_lines_avatars({:by_range, range}) when is_list(range) do
     range
@@ -140,7 +141,7 @@ defmodule Realm do
       Guid.whereis(id)
     end)
     |> Enum.filter(&(is_pid(&1)))
-  end 
+  end
 
   def get_lines_avatars({:by_slice, num}) do
     get_lines_avatars(:all)
@@ -164,7 +165,7 @@ defmodule Realm do
         account_time = interval_config[:account_time] || 0
         slices = (account_time == 0) && 0 || Enum.count(1..account_time)
         from_id + chat_robot_num + addition * slices
-      _ -> 
+      _ ->
         from_id + chat_robot_num
     end
     from_id..end_id

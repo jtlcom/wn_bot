@@ -49,7 +49,6 @@ config :pressure_test, strategy: 'once_time'
 config :pressure_test, broadcast_delay: 20
 config :pressure_test, default_stat: 0
 config :pressure_test, robot_gene: [11, 22, 32]
-config :pressure_test, equipments: %{1 => [201160901, 201130901], 2 => [201260901, 201230901], 3 => [201330901, 201360901]}
 # config :pressure_test, eudemonds: %{
 #   1 => [
 #     203010201,
@@ -176,15 +175,12 @@ config :pressure_test, auto_reply: [
     # {:reply, ["gm:add_eudemon", 203010201, 50, 20]}, 12000,
     # {:reply, ["gm:add_eudemon", 203010201, 50, 20]}, 14000
     # {:reply, ["change_scene", 1, 102111]}, 20000
-    # :start_auction, 20000
     # {:reply, ["shop:list", 101]}, 10000,
     # {:reply, ["shop:list", 102]}, 10000,
     # :trade_all, 20000
     # {:reply, ["change_scene", 1, 411001]}, 20000
     # {:reply, ["territory_warfare:player_enter"]}, 180000
     # {:reply, ["change_scene", 203011]}, 20000
-    # {:reply, ["group:enter_home"]}, 20000,
-    # {:reply, ["group:enter_home"]}, 21000
     {:reply, ["gm:add_eudemon", 203010406, 110, 110]}, 10000,
     # {:reply, ["gm:add_eudemon", 203010602, 150, 150]}, 12000,
     # {:reply, ["gm:add_eudemon", 203010505, 50, 50]}, 14000,
@@ -199,8 +195,6 @@ config :pressure_test, strategy_reply: [
     # {:reply, ["battle_field:player_enter"]}, 20000,
     # {:reply, ["battle_field:player_enter"]}, 180000,
     # {:reply, ["battle_field:player_enter"]}, 300000,
-    # {:set_robot_state, 8}, 10000,
-    # {:set_robot_state, 0}, 10000
     # {:reply, ["battle_field:player_enter"]}, 10000,
     # {:reply, ["short_treasure:player_enter"]}, 10000,
     # :trade_all, 20000,
@@ -215,9 +209,7 @@ config :pressure_test, strategy_reply: [
 config :pressure_test, do_while: false
 config :pressure_test, do_while_interval: 1   #min
 config :pressure_test, while_reply: [
-    # :join_group, 1000,
     # {:reply, ["gm:random_act_auction", 118, 1]}, 10000,
-    # :quit_group, 55000
     # {:reply, ["battle_field:player_enter"]}, 1000,
     # {:reply, ["battle_field:player_leave"]}, 50000,
   ]
