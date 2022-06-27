@@ -4,7 +4,7 @@ defmodule AutoEnter do
   |> Enum.map(&(&1["value"]["map"]))
 
   def auto_enter(tag, player) do
-    msgs = 
+    msgs =
     cond do
       #[107, 116, 117, 118, 119]
       107 ->
@@ -13,8 +13,6 @@ defmodule AutoEnter do
         [["battle_field:player_enter"]]
       117 ->
         [["short_treasure:player_enter"]]
-      118 ->
-        [["group:enter_home"], ["group_party:player_enter"]]
       119 ->
         [["mind_quiz:player_enter"]]
       125 ->
@@ -25,7 +23,7 @@ defmodule AutoEnter do
       true ->
         []
     end
-    
+
     Enum.each(msgs, fn mm ->
       # start_time = Utils.timestamp(:ms)
       Client.send_msg(player.conn, mm)

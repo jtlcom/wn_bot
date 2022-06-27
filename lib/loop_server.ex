@@ -45,9 +45,6 @@ defmodule LoopServer do
     # IO.inspect "broadcast msg_begin_together!"
     # # Realm.broadcast(:msg_begin_together)
     # need_group = Application.get_env(:pressure_test, :need_group, false)
-    # IO.inspect "create group"
-    # need_group && Group.create_group({:by_num, Application.get_env(:pressure_test, :create_group_num, 100)})
-    # IO.inspect "join group"
     IO.inspect "auto msg reply begin together ~~~"
     Realm.broadcast_all_interval(:msg_begin_together, Application.get_env(:pressure_test, :per_enter, 1), 50)
     {:noreply, state}

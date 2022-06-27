@@ -2,7 +2,6 @@ defmodule Tool do
   # @guard_state 1
   # @do_nothing 8
   @statistics_name :lala
-  @gm_equips %{1 => [201_999_992], 2 => [201_999_993], 3 => [201_999_994]}
 
   def robot_num() do
     Debug.onlines() |> length()
@@ -26,11 +25,6 @@ defmodule Tool do
     Keyword.get(:ets.lookup(@statistics_name, key), key) || 0
   end
 
-  def change_scene(scene, lines \\ :all) do
-    ["change_scene", scene]
-    |> Realm.broadcast_avatars(lines)
-  end
-
   @sleep_ms 120 * 1000
   def do_while_enter() do
     pid =
@@ -42,11 +36,6 @@ defmodule Tool do
   end
 
   def do_loop() do
-    IO.inspect("main_city enter")
-    MainCity.enter({:by_num, 198})
-    Process.sleep(@sleep_ms)
-    IO.inspect("cross_map enter")
-    WildBossZone.enter(423_001, {:by_num, 198})
     Process.sleep(@sleep_ms)
     do_loop()
   end

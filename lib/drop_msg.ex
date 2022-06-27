@@ -12,12 +12,6 @@ defmodule DropMsg do
       <<146, 163, "evt", 149, 164, "cast", _reset::bits>> ->
         :no_need_handle
 
-      # <<146, 163, "evt", 147, 172, "prop_changed", 0xCF, id::64, 129, 162, "xp", reset::bits>> ->
-      #   :no_need_handle
-
-      # <<146, 163, "evt", 147, 172, "prop_changed", 0xCF, id::64, 129, 162, "fp", reset::bits>> ->
-      #   :no_need_handle
-
       <<146, 163, "evt", 149, 164, "trans", _reset::bits>> ->
         :no_need_handle
 

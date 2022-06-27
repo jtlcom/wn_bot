@@ -174,20 +174,15 @@ config :pressure_test, auto_reply: [
     # {:reply, ["gm:add_eudemon", 203010201, 50, 20]}, 10000,
     # {:reply, ["gm:add_eudemon", 203010201, 50, 20]}, 12000,
     # {:reply, ["gm:add_eudemon", 203010201, 50, 20]}, 14000
-    # {:reply, ["change_scene", 1, 102111]}, 20000
     # {:reply, ["shop:list", 101]}, 10000,
     # {:reply, ["shop:list", 102]}, 10000,
-    # :trade_all, 20000
-    # {:reply, ["change_scene", 1, 411001]}, 20000
     # {:reply, ["territory_warfare:player_enter"]}, 180000
-    # {:reply, ["change_scene", 203011]}, 20000
     {:reply, ["gm:add_eudemon", 203010406, 110, 110]}, 10000,
     # {:reply, ["gm:add_eudemon", 203010602, 150, 150]}, 12000,
     # {:reply, ["gm:add_eudemon", 203010505, 50, 50]}, 14000,
     # # {:reply, ["battle_field:player_enter"]}, 20000,
     # {:reply, ["shop:list", 101]}, 10000,
     # {:reply, ["shop:list", 102]}, 10000,
-    # :trade_all, 20000
   ]
 
 config :pressure_test, by_strategy: false
@@ -197,10 +192,7 @@ config :pressure_test, strategy_reply: [
     # {:reply, ["battle_field:player_enter"]}, 300000,
     # {:reply, ["battle_field:player_enter"]}, 10000,
     # {:reply, ["short_treasure:player_enter"]}, 10000,
-    # :trade_all, 20000,
     # {:reply, ["shop:list", 101]}, 10000,
-    # {:reply, ["change_scene", 1, 411001]}, 20000,
-    # {:reply, ["change_scene", 1, 102111]}, 20000
   ]
 
 # config :pressure_test, serverlist_file: "./config/serverlist.txt"

@@ -2,17 +2,17 @@ defmodule Upload do
   require Logger
 
   def trans_info(title, time_cost, timestamp) do
-    # transParamsStr = 
-      # %{data: 
+    # transParamsStr =
+      # %{data:
       #  [
         # %{
-        #   trans_name: title, 
-        #   time_cost: time_cost, 
+        #   trans_name: title,
+        #   time_cost: time_cost,
         #   trans_result: 1,
         #   timestamps: timestamp
         # }
       #  ]
-    # } 
+    # }
     aid = Process.get(:avatar_id, 0)
     if (Process.get(:robot_type) != :init_robot) do
       pid = Guid.whereis(Guid.new(:wetest, Integer.mod(aid, Application.get_env(:pressure_test, :wetest_api_num, 50)) + 1))# |> IO.inspect
@@ -34,13 +34,13 @@ defmodule Upload do
 
   def recv_log(player, ts_info, msg) do
     aid = Process.get(:svr_aid, 0)
-    (if_log?(msg) && aid > 0) 
-      && Logger.info "player_id: #{inspect player.id}, c_id: #{inspect player.c_id}, ts_info: #{inspect ts_info}, msg: #{inspect msg}"
+    (if_log?(msg) && aid > 0)
+      && Logger.info "player_id: #{inspect player.id}, ts_info: #{inspect ts_info}, msg: #{inspect msg}"
   end
 
   def res_log(msg) do
     aid = Process.get(:svr_aid, 0)
-    (if_log?(msg) && aid > 0) 
+    (if_log?(msg) && aid > 0)
       && Logger.info "aid: #{aid} res msg is #{inspect msg}"
   end
 

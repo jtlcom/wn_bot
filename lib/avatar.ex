@@ -39,32 +39,20 @@ defmodule Avatar.Player do
             fixed_units: %{},
             dynamic_units: %{},
             # --------------------
-            c_id: 0,
-            spells: %{},
             state: 0,
             next_state: 0,
-            move_path: [],
-            motion: {},
             speed: 0,
-            stats: %{},
-            points: %{},
-            pos: %{},
             scene_guid: 0,
-            scene_id: 0,
             last_scene_id: 0,
             last_scene_guid: 0,
             aimed_entity: 0,
-            spells: %{},
             level: 1,
             aimed_drop_id: 0,
             camp: 0,
             pk_mode: 0,
-            tasks: %{},
             line_id: 0,
             chat: nil,
             type: nil,
-            chat_auth: :wait_for_auth,
-            broadcast_cd: 0,
             bag: %{},
             gender: 1,
             class: 1,
@@ -93,7 +81,7 @@ defmodule Avatar do
   # @recv_buff Application.get_env(:pressure_test, :recv_buff, 10)
   @create_major [11, 12, 21, 22, 31, 32]
   # @mnesia_mgr_name MnesiaMgr
-  @chat_msgs ["msg:auth", "msg:world", "msg:point"]
+  @chat_msgs ["msg:world", "msg:point"]
 
   @msg_broadcast ["*+*", "(*><*)", "^_^", "^@^", "->_->"]
   # @chat_broadcast_delay Application.get_env(:pressure_test, :broadcast_delay, 20)
@@ -153,7 +141,7 @@ defmodule Avatar do
     IO.inspect(end_time - start_time)
     Upload.log("line_id: #{line_id}, robot: #{id}, init used: #{end_time - start_time}")
     # Upload.trans_info("robot #{name} login !!!", end_time - start_time, Utils.timestamp)
-    {:ok, %Player{id: id, conn: conn, line_id: line_id, type: type, c_id: id}}
+    {:ok, %Player{id: id, conn: conn, line_id: line_id, type: type}}
   end
 
   # -------------------------------- handle_info ----------------------------------
@@ -289,7 +277,6 @@ defmodule Avatar do
     #     end_time = Utils.timestamp(:ms)
     #     Upload.trans_info("msg:world", end_time - start_time, Utils.timestamp())
     #     # IO.inspect "msg:world"
-    #     Process.send_after(self(), :reset_broadcast_cd, Application.get_env(:pressure_test, :broadcast_delay, 20) * 1000)
     #     1
     #   true ->
     #     broadcast_cd
@@ -338,29 +325,6 @@ defmodule Avatar do
     {:stop, {:shutdown, :login_out}, player}
   end
 
-  def handle_info(:trade_all, player) do
-    # IO.inspect("trade_all")
-    # |> IO.inspect()
-    # |> IO.inspect()
-    trade_indics = player.bag |> Map.keys() |> Enum.take_random(10)
-
-    trade_indics
-    |> Enum.each(fn index ->
-      reply_self_after(["stalls:submit", index, 10, 1, ""], index * 1000)
-    end)
-
-    send_self_after(:cancel_all, 20 * 1000)
-    # send_self_after(:real_trade, 1000)
-    {:noreply, %{player | trades: trade_indics}}
-  end
-
-  def handle_info({:trade_some, num}, player) do
-    # IO.inspect "trade_some"
-    trade_indics = player.bag |> Map.keys() |> Enum.take(num)
-    send_self_after(:real_trade, 1000)
-    {:noreply, %{player | trades: trade_indics}}
-  end
-
   def handle_info(:real_trade, %{trades: [index | tail]} = player) do
     # IO.inspect "real_trade #{index}"
     reply_self(["stalls:submit", index, 10, 1, ""])
@@ -369,35 +333,6 @@ defmodule Avatar do
 
   def handle_info(:real_trade, %{trades: []} = player) do
     {:noreply, player}
-  end
-
-  def handle_info(:set_trade_query, player) do
-    Process.put(:trade_query, true)
-    Process.send_after(self(), :start_query, 1000)
-    # IO.inspect "start_query ok !!!"
-    {:noreply, player}
-  end
-
-  def handle_info(:stop_query, player) do
-    Process.put(:trade_query, false)
-    # IO.inspect "stop_query ok !!!"
-    {:noreply, player}
-  end
-
-  @stall_query_delay 10
-  def handle_info(:start_query, player) do
-    reply_self(["stalls:list", 0, 0, 0, 0, [], 0, 0])
-
-    if Process.get(:trade_query, false) do
-      Process.send_after(self(), :start_query, @stall_query_delay * 1000)
-    end
-
-    # IO.inspect "trade_query ok !!!"
-    {:noreply, player}
-  end
-
-  def handle_info(:reset_broadcast_cd, player) do
-    {:noreply, player |> Map.put(:broadcast_cd, 0)}
   end
 
   def handle_info({:reply, msg}, %{conn: conn} = player) do
@@ -429,28 +364,6 @@ defmodule Avatar do
     {:noreply, player}
   end
 
-  def handle_info(["msg:auth", "ok"], player) do
-    # #IO.inspect "msg:auth ok"
-    set_channel_msg = [
-      "msg:set_channels",
-      %{
-        "friends" => true,
-        "group" => true,
-        "system" => true,
-        "team" => true,
-        "world" => true
-      }
-    ]
-
-    Client.send_msg(player.conn, set_channel_msg)
-    {:onreply, player |> Map.put(:chat_auth, :authed)}
-  end
-
-  def handle_info(["msg:auth", _] = _msg, player) do
-    # #IO.inspect "auth faild, recv msg : #{inspect msg}"
-    {:noreply, player}
-  end
-
   def handle_info(["info", ["group_party:quiz_answer_resp" | _]], player) do
     # IO.inspect "group_party:quiz_answer_resp"
     upload("group_party:quiz_answer")
@@ -470,7 +383,6 @@ defmodule Avatar do
       # Process.sleep(5)
     end)
 
-    send_self_after(:trade_all, 5000)
     {:noreply, player}
   end
 
@@ -494,7 +406,6 @@ defmodule Avatar do
     # IO.inspect("quiz end !!!")
 
     # log("quiz player id is : #{player.id}", "correct_count : #{correct_count}, answerd_count : #{answerd_count}")
-    # Client.send_msg(player.conn, ["change_scene", 1010])
     {:noreply, %{player | state: @default_stat}}
   end
 
@@ -620,52 +531,6 @@ defmodule Avatar do
     {:stop, {:shutdown, :login_out}, player}
   end
 
-  def handle_cast(:trade_all, player) do
-    # IO.inspect("trade_all")
-    # |> IO.inspect()
-    # |> IO.inspect()
-    trade_indics = player.bag |> Map.keys() |> Enum.take_random(10)
-
-    trade_indics
-    |> Enum.each(fn index ->
-      reply_self_after(["stalls:submit", index, 10, 1, ""], index * 1000)
-    end)
-
-    send_self_after(:cancel_all, 20 * 1000)
-    {:noreply, %{player | trades: trade_indics}}
-  end
-
-  def handle_cast(:cancel_all, player) do
-    # IO.inspect("cancel_all")
-
-    0..7
-    |> Enum.each(fn index ->
-      reply_self_after(["stalls:cancel", index], index * 200)
-    end)
-
-    {:noreply, player}
-  end
-
-  def handle_cast({:trade_some, num}, player) do
-    # IO.inspect "trade_some"
-    trade_indics = player.bag |> Map.keys() |> Enum.take(num)
-    send_self_after(:real_trade, 1000)
-    {:noreply, %{player | trades: trade_indics}}
-  end
-
-  def handle_cast(:set_trade_query, player) do
-    Process.put(:trade_query, true)
-    Process.send_after(self(), :start_query, 1000)
-    # IO.inspect "start_query ok !!!"
-    {:noreply, player}
-  end
-
-  def handle_cast(:stop_query, player) do
-    Process.put(:trade_query, false)
-    # IO.inspect "stop_query ok !!!"
-    {:noreply, player}
-  end
-
   def handle_cast({:reply, msg}, %{conn: conn, id: _id} = player) do
     # IO.inspect "#{player.id}  #{Utils.timestamp(:ms)}"
     # Logger.info("reply to server: #{inspect(msg)}")
@@ -708,15 +573,11 @@ defmodule Avatar do
     {:noreply, player}
   end
 
-  def handle_cast(msg, %{conn: conn, id: id, type: type} = player) when type != :init_robot do
+  def handle_cast(msg, %{conn: conn, type: type} = player) when type != :init_robot do
     # start_time = Utils.timestamp(:ms)
 
     {ex_msg, new_player} =
       case msg do
-        ["rolegroup:create_group"] ->
-          {["rolegroup:create_group", "#{Integer.mod(id, 100_000)}", "lala", "we will win !!!"]
-           |> IO.inspect(), %{player | group: -1}}
-
         _ ->
           {msg, player}
       end
@@ -763,7 +624,7 @@ defmodule Avatar do
     # start_time = Utils.timestamp(:ms)
 
     StartPressure.log(
-      "#{player.name} have logined out, id is #{player.id}, type is #{player.type}, enter map is #{player.scene_id}, time is #{inspect(Utils.timestamp() |> DateTime.from_unix() |> elem(1))}"
+      "#{player.name} have logined out, id is #{player.id}, type is #{player.type}, time is #{inspect(Utils.timestamp() |> DateTime.from_unix() |> elem(1))}"
     )
 
     # GenServer.cast(@mnesia_mgr_name, {:new_del, line_id, self()})
@@ -782,7 +643,7 @@ defmodule Avatar do
     # start_time = Utils.timestamp(:ms)
 
     StartPressure.log(
-      "#{player.name} have logined out, id is #{player.id}, type is #{player.type}, enter map is #{player.scene_id}, time is #{inspect(Utils.timestamp() |> DateTime.from_unix() |> elem(1))}"
+      "#{player.name} have logined out, id is #{player.id}, type is #{player.type}, time is #{inspect(Utils.timestamp() |> DateTime.from_unix() |> elem(1))}"
     )
 
     # GenServer.cast(@mnesia_mgr_name, {:new_del, line_id, self()})
