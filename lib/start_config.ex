@@ -3,34 +3,38 @@ defmodule StartConfig do
 
   def log(msg) do
     # inspect(msg, [syntax_colors: [number: :red, atom: :red, tuple: :red, map: :red, list: :red], pretty: true])
-    inspect msg
+    inspect(msg)
   end
 
   def trans_from_decode(cfgs) do
     cfgs
     |> Map.update(:ip, get_config(:ip, '127.0.0.1'), &String.to_charlist/1)
-    |> Map.update(:path_find_strategy, get_config(:path_find_strategy, :not_fight), &String.to_atom/1)
+    |> Map.update(
+      :path_find_strategy,
+      get_config(:path_find_strategy, :not_fight),
+      &String.to_atom/1
+    )
     |> Map.update(:strategy, get_config(:strategy, 'once_time'), &String.to_charlist/1)
   end
 
   def init_config() do
     with cfg_file_path = get_config(:cfg_file_path, "./小丑.txt"),
-      true <- File.exists?(cfg_file_path),
-      {:ok, lala} = File.read(cfg_file_path),
-      %{} = cfgs_by_file <- Jason.decode!(lala) |> GameDef.to_atom_key() |> trans_from_decode()
-    do
+         true <- File.exists?(cfg_file_path),
+         {:ok, lala} = File.read(cfg_file_path),
+         %{} = cfgs_by_file <- Jason.decode!(lala) |> GameDef.to_atom_key() |> trans_from_decode() do
       cfgs_by_file
       |> Enum.each(fn {k, v} ->
         Application.put_env(:pressure_test, k, v)
       end)
+
       IO.inspect(cfgs_by_file, pretty: true)
-      Logger.warn "#{log 88888888888} load_file_cfg: #{log cfgs_by_file}"
+      Logger.warn("#{log(88_888_888_888)} load_file_cfg: #{log(cfgs_by_file)}")
     end
   end
 
   def save_config() do
     cfgs = %{
-      ip: '172.18.188.183' |> List.to_string,
+      ip: '127.0.0.1' |> List.to_string(),
       port: 6666,
       start_id: 1,
       start_num: 5,
@@ -39,7 +43,7 @@ defmodule StartConfig do
       path_find_strategy: Atom.to_string(:not_fight),
       cowboy_port: 9999,
       robot_gene: [11, 22, 32],
-      strategy: 'once_time' |> List.to_string,
+      strategy: 'once_time' |> List.to_string(),
       leave_after: 120,
       enter_delay: 100,
       addition: 5,
@@ -50,6 +54,7 @@ defmodule StartConfig do
         each_slice_delay: 1000
       }
     }
+
     File.write(get_config(:cfg_file_path, "./小丑.txt"), Jason.encode!(cfgs))
   end
 
@@ -88,7 +93,7 @@ defmodule StartConfig do
   end
 
   def start_id() do
-    get_config(:start_id, 600000)
+    get_config(:start_id, 600_000)
   end
 
   def robot_num() do
@@ -119,14 +124,15 @@ defmodule StartConfig do
     case Application.get_all_env(:kernel) do
       nil ->
         Application.get_env(:pressure_test, key, default_val)
+
       list ->
         case list[key] do
           nil ->
             Application.get_env(:pressure_test, key, default_val)
+
           val ->
             val
         end
     end
   end
-
 end

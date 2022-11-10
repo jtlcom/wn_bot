@@ -14,7 +14,7 @@ defmodule PressureTest.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      applications: applications(Mix.env),
+      applications: applications(Mix.env()),
       mod: {Main, []},
       included_applications: [:logger_file_backend]
     ]
@@ -25,7 +25,18 @@ defmodule PressureTest.MixProject do
   # end
 
   def applications(_) do
-    [:poolboy, :quantum, :graphmath, :poison, :httpoison, :timex, :tzdata, :jason, :plug_cowboy, :eex_html]
+    [
+      :poolboy,
+      :quantum,
+      :graphmath,
+      :poison,
+      :httpoison,
+      :timex,
+      :tzdata,
+      :jason,
+      :plug_cowboy,
+      :eex_html
+    ]
   end
 
   # Run "mix help deps" to learn about dependencies.
@@ -35,6 +46,7 @@ defmodule PressureTest.MixProject do
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
       {:quantum, "~> 2.0"},
       {:timex, "~> 3.0"},
+      {:logger_file_backend, "~> 0.0.12"},
       {:poison, "~> 3.0"},
       {:poolboy, ">= 0.0.0"},
       {:httpoison, "~> 0.13"},
@@ -52,4 +64,4 @@ defmodule PressureTest.MixProject do
   end
 end
 
-Enum.each Path.wildcard("tasks/*.exs"), &Code.require_file/1
+Enum.each(Path.wildcard("tasks/*.exs"), &Code.require_file/1)

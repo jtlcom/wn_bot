@@ -3,7 +3,7 @@
 	"chat_num":0,														# 聊天机器人数量
 	"cowboy_port":9999,											# 机器人统计网页端口
 	"enter_delay":100,											# 忽略
-	"ip":"172.18.188.183",									# 服务器ip
+	"ip":"127.0.0.1",												# 服务器ip
 	"leave_after":120,											# 机器人多久后离开（分钟）
 	"log_to_file":true,											# 是否记录日志到本地
 	"msg_begin_cfg":{

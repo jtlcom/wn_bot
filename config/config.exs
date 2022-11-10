@@ -42,7 +42,8 @@ config :pressure_test, chat_broadcast_num: 0
 # 进入间隔
 config :pressure_test, enter_delay: 100
 config :pressure_test, addition: 5
-config :pressure_test, leave_after: 120    # min
+# min
+config :pressure_test, leave_after: 120
 config :pressure_test, strategy: 'once_time'
 
 # 世界消息发送延时 ，s
@@ -128,19 +129,18 @@ config :pressure_test, msg_broadcast: ["*+*", "(*><*)", "^_^", "^@^", "->_->"]
 #     import_config "#{Mix.env}.exs"
 config :tzdata, :autoupdate, :disabled
 
-config :pressure_test, wetest_api: %{
-  apiurl: "http://api.wetest.qq.com",
-  secretid: "W0NRWmZBY1dC3rSm",
-  secretkey: "PPif6drSzHqsVWS4",
-  projectid: "b30a017fb2cb54ce762fc54ab83cd903",
-  zoneid: 0
-}
+config :pressure_test,
+  wetest_api: %{
+    apiurl: "http://api.wetest.qq.com",
+    secretid: "W0NRWmZBY1dC3rSm",
+    secretkey: "PPif6drSzHqsVWS4",
+    projectid: "b30a017fb2cb54ce762fc54ab83cd903",
+    zoneid: 0
+  }
+
 config :pressure_test, Scheduler,
   timezone: "Asia/Shanghai",
   jobs: []
-
-config :logger, :console, format: "<=====$time $metadata[$level] ======>\n\n $levelpad$message\n\n",
-  metadata: [:module, :function, :line], level: :warn
 
 config :pressure_test, mnesia_init_table: [Mnesiam.AvatarLines]
 config :pressure_test, recv_buff: 10
@@ -149,23 +149,36 @@ config :pressure_test, response_reply_url: "http://openapi.tuling123.com/openapi
 config :pressure_test, api_key: "3656ccc3481640f2b56ee517c50ae3ee"
 config :pressure_test, user_id: "longlong"
 
-config :logger, backends: [{LoggerFileBackend, :info}] # {LoggerFileBackend, :debug},
-# config :logger, :debug, path: "lib/log/debug.log", level: :debug
-config :logger, :info, path: "./info.log", level: :info, rotate: %{max_bytes: 10485760, keep: 5}, format: "\n$date $time $metadata[$level] $levelpad$message\n"
+config :logger, handle_otp_reports: true, handle_sasl_reports: true
+
+config :logger, backends: [:console, {LoggerFileBackend, :log_file}]
+
+config :logger, :console,
+  format: "<=====$time $metadata[$level] ======>\n\n $message\n\n",
+  metadata: [:module, :function, :line],
+  level: :debug
+
+config :logger, :log_file,
+  path: "./info.log",
+  rotate: %{max_bytes: 104_857_600, keep: 1},
+  format: "\n$date $time $metadata[$level] $message\n"
 
 config :pressure_test, need_group: false
 config :pressure_test, create_group_num: 120
 config :pressure_test, level_range: 260..300
 
-config :pressure_test, preconditions: [
-  # ["gm:open_act", 116, 600]
-  # ["gm:random_act_auction", 118, 200],
-  # ["gm:open_act", 125, 6000]
-  # ["gm:open_act", 118, 600],
-  # ["gm:open_act", 116, 600],
-  # ["gm:open_act", 117, 600]
+config :pressure_test,
+  preconditions: [
+    # ["gm:open_act", 116, 600]
+    # ["gm:random_act_auction", 118, 200],
+    # ["gm:open_act", 125, 6000]
+    # ["gm:open_act", 118, 600],
+    # ["gm:open_act", 116, 600],
+    # ["gm:open_act", 117, 600]
   ]
-config :pressure_test, auto_reply: [
+
+config :pressure_test,
+  auto_reply: [
     # {:reply, ["shop:list", 101]}, 10000
     # {:reply, ["gm:add_eudemon", 203010201, 50, 20]}, 10000,
     # {:reply, ["gm:add_eudemon", 203010201, 50, 20]}, 12000,
@@ -177,7 +190,8 @@ config :pressure_test, auto_reply: [
     # {:reply, ["shop:list", 101]}, 10000,
     # {:reply, ["shop:list", 102]}, 10000,
     # {:reply, ["territory_warfare:player_enter"]}, 180000
-    {:reply, ["gm:add_eudemon", 203010406, 110, 110]}, 10000,
+    {:reply, ["gm:add_eudemon", 203_010_406, 110, 110]},
+    10000
     # {:reply, ["gm:add_eudemon", 203010602, 150, 150]}, 12000,
     # {:reply, ["gm:add_eudemon", 203010505, 50, 50]}, 14000,
     # # {:reply, ["battle_field:player_enter"]}, 20000,
@@ -186,7 +200,9 @@ config :pressure_test, auto_reply: [
   ]
 
 config :pressure_test, by_strategy: false
-config :pressure_test, strategy_reply: [
+
+config :pressure_test,
+  strategy_reply: [
     # {:reply, ["battle_field:player_enter"]}, 20000,
     # {:reply, ["battle_field:player_enter"]}, 180000,
     # {:reply, ["battle_field:player_enter"]}, 300000,
@@ -199,8 +215,11 @@ config :pressure_test, strategy_reply: [
 # config :pressure_test, server_name: "long"
 
 config :pressure_test, do_while: false
-config :pressure_test, do_while_interval: 1   #min
-config :pressure_test, while_reply: [
+# min
+config :pressure_test, do_while_interval: 1
+
+config :pressure_test,
+  while_reply: [
     # {:reply, ["gm:random_act_auction", 118, 1]}, 10000,
     # {:reply, ["battle_field:player_enter"]}, 1000,
     # {:reply, ["battle_field:player_leave"]}, 50000,
@@ -211,17 +230,22 @@ config :pressure_test, group_index_addition: 10
 config :pressure_test, wetest_api_num: 20
 config :pressure_test, cowboy_port: 9999
 config :pressure_test, not_log_heads: ["move"]
-config :pressure_test, msg_begin_cfg: %{
-  each_slice_num: 5,
-  each_slice_delay: 15
-}
+
+config :pressure_test,
+  msg_begin_cfg: %{
+    each_slice_num: 5,
+    each_slice_delay: 15
+  }
+
 # config :pressure_test, enter_array, %{
 #   interval: 10,
 #   enter_num: 50,
 #   account_time: 6
 # }
 
-config :pressure_test, path_find_strategy: :not_fight       # [:near, :only_player]
-config :pressure_test, wetest_api_false: :force             # :force 强制开启， int 尝试wetest次数
+# [:near, :only_player]
+config :pressure_test, path_find_strategy: :not_fight
+# :force 强制开启， int 尝试wetest次数
+config :pressure_test, wetest_api_false: :force
 config :pressure_test, cfg_file_path: "./env.json"
 config :pressure_test, need_move: false
