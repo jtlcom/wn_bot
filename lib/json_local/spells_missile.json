@@ -1,6 +1,0 @@
-{"total_rows":4,"offset":0,"rows":[
-{"id":"missile:411412010","key":411412010,"value":{"name":"星陨","position":1,"moveWay":4,"delayTime":0.1,"duration":2,"camp":3,"canPenetration":true,"maxPenetration":1,"speed":20,"acceleration":0,"missileWidth":1,"removeCondition":1,"effectId":411412011,"targetLimit":3,"missileNumber":null}},
-{"id":"missile:411412020","key":411412020,"value":{"name":"星陨","position":1,"moveWay":4,"delayTime":0.1,"duration":2,"camp":3,"canPenetration":true,"maxPenetration":1,"speed":20,"acceleration":0,"missileWidth":1,"removeCondition":1,"effectId":411412021,"targetLimit":3,"missileNumber":null}},
-{"id":"missile:411412030","key":411412030,"value":{"name":"星陨","position":1,"moveWay":4,"delayTime":0.1,"duration":2,"camp":3,"canPenetration":true,"maxPenetration":1,"speed":20,"acceleration":0,"missileWidth":1,"removeCondition":1,"effectId":411412031,"targetLimit":3,"missileNumber":null}},
-{"id":"missile:411412040","key":411412040,"value":{"name":"星陨","position":1,"moveWay":4,"delayTime":0.1,"duration":2,"camp":3,"canPenetration":true,"maxPenetration":1,"speed":20,"acceleration":0,"missileWidth":1,"removeCondition":1,"effectId":411412041,"targetLimit":3,"missileNumber":null}}
-]}

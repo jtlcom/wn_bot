@@ -1,7 +1,0 @@
-{"total_rows":5,"offset":0,"rows":[
-{"id":"scene_change_recover:1","key":1,"value":{"pair":[[2,4,6],[1]],"actions":["recoverEudemon","buff"],"buffs":[1]}},
-{"id":"scene_change_recover:2","key":2,"value":{"pair":[[1,2,4,6],[3,7]],"actions":["hp","eudemonHp","buff"],"buffs":[1]}},
-{"id":"scene_change_recover:3","key":3,"value":{"pair":[[3,7],[1,2,4,6]],"actions":["hp","eudemonHp","buff"],"buffs":[1]}},
-{"id":"scene_change_recover:4","key":4,"value":{"pair":[[2,4,6],[2,4,6]],"actions":[],"buffs":[0]}},
-{"id":"scene_change_recover:5","key":5,"value":{"pair":[[7],[7]],"actions":["hp","eudemonHp","buff"],"buffs":[1]}}
-]}
