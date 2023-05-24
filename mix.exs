@@ -20,9 +20,9 @@ defmodule PressureTest.MixProject do
     ]
   end
 
-  # def applications(:dev) do
-  #   applications(:all) ++ [:changed_reloader]
-  # end
+  def applications(:dev) do
+    applications(:all) ++ [:changed_reloader]
+  end
 
   def applications(_) do
     [
@@ -30,6 +30,7 @@ defmodule PressureTest.MixProject do
       :quantum,
       :graphmath,
       :poison,
+      :fastglobal,
       :httpoison,
       :timex,
       :tzdata,
@@ -51,12 +52,14 @@ defmodule PressureTest.MixProject do
       {:poolboy, ">= 0.0.0"},
       {:httpoison, "~> 0.13"},
       {:graphmath, "~> 1.0"},
-      {:changed_reloader, "~> 0.1.4"},
+      {:changed_reloader,
+       git: "http://wn-server-1:8081/huangbo/changed_reloader", only: :dev, tag: "1.5"},
+      {:fastglobal, "~> 1.0"},
       {:recon, "~> 2.3.6"},
       {:distillery, "~> 2.0"},
       {:jason, "~> 1.1"},
       {:crontab, "~> 1.1"},
-      {:logger_file_backend, "~> 0.0.10"},
+      # {:logger_file_backend, "~> 0.0.10"},
       {:tzdata, "~> 0.5.19"},
       {:plug_cowboy, "~> 2.0"},
       {:eex_html, git: "https://github.com/CrowdHailer/eex_html"}
