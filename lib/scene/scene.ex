@@ -1,3 +1,0 @@
-defmodule Scene do
-  
-end

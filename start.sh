@@ -1,1 +1,1 @@
-iex --erl "+K true +pc unicode +sbwt none +sub true" -S mix
+iex -S mix

@@ -27,7 +27,8 @@ defmodule AvatarLoop do
   # 9. 什么也不做
   # -----------------
   def loop(player) do
-    IO.puts("do_loop  do_loop do_loop do_loop do_loop")
+    IO.puts("do_loop: player: #{player.account}")
+    Avatar.Ets.insert(player.account, self())
 
     cond do
       # city_warnning(player) ->
@@ -41,26 +42,27 @@ defmodule AvatarLoop do
         rand = Enum.random(1..100)
 
         cond do
-          rand <= 75 ->
-            troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.min()
-            pos = Avatar.analyze_verse(player, :forward)
-            Client.send_msg(player.conn, ["op", "forward", [troop_guid, pos]])
-            IO.puts("forward forward forward forward forward}")
-            IO.puts("troop_guid: #{inspect(troop_guid)}}")
-            IO.puts("pos: #{inspect(pos)}}")
-            {:ok, player}
+          # rand <= 75 ->
+          #   troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.min()
+          #   pos = Avatar.analyze_verse(player, :forward)
+          #   Client.send_msg(player.conn, ["op", "forward", [troop_guid, pos]])
+          #   IO.puts("forward forward forward forward forward}")
+          #   IO.puts("troop_guid: #{inspect(troop_guid)}}")
+          #   IO.puts("pos: #{inspect(pos)}}")
+          #   {:ok, player}
 
-          rand <= 95 ->
-            troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.min()
-            pos = Avatar.analyze_verse(player, :attack)
-            Client.send_msg(player.conn, ["op", "attack", [troop_guid, pos]])
-            IO.puts("atk atk atk atk atk}")
-            IO.puts("troop_guid: #{inspect(troop_guid)}}")
-            IO.puts("pos: #{inspect(pos)}}")
-            {:ok, player}
+          # rand <= 95 ->
+          #   troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.min()
+          #   pos = Avatar.analyze_verse(player, :attack)
+          #   Client.send_msg(player.conn, ["op", "attack", [troop_guid, pos]])
+          #   IO.puts("atk atk atk atk atk}")
+          #   IO.puts("troop_guid: #{inspect(troop_guid)}}")
+          #   IO.puts("pos: #{inspect(pos)}}")
+          #   {:ok, player}
 
-          true ->
-            {:sleep, 15}
+          rand <= 100 ->
+            {:ok, player}
+            # {:sleep, 15}
         end
     end
   end

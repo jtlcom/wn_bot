@@ -4,8 +4,8 @@ defmodule Client do
   require Logger
   # @timeout 9_999_999
 
-  def start(id, line_id, type) do
-    Realm.start_avatar(id, line_id, type)
+  def start(account, born_state) do
+    Realm.start_avatar(account, born_state)
   end
 
   def send_msg(conn, msg) do
@@ -16,7 +16,6 @@ defmodule Client do
     Upload.res_log(msg)
     bin = SimpleMsgPack.pack!(msg) |> IO.iodata_to_binary()
     # bin = :erlang.term_to_binary(msg)
-    # Logger.info("000000")
     bin1 = <<id::unsigned-integer-size(32), bin::binary>>
     # Logger.info fn -> "bin1 is #{inspect(bin1)}" end
     # :gen_tcp.send(conn, :zlib.compress(bin1))
@@ -31,11 +30,14 @@ defmodule Client do
         Logger.info("send error is #{inspect(send_error)}")
 
       _ ->
+        Logger.info("send message------------------------------------------------:
+        \t\t avatar: \t #{id}
+        \t\t time: \t #{inspect(:calendar.local_time())}
+        \t\t msg: \t #{inspect(msg, pretty: true, limit: :infinity)}
+        ")
         :ok
     end
 
     MsgCounter.res_count_add()
-    # t2 = Utils.timestamp(:ms)
-    # (t2 - t1 > 3000) && IO.inspect("id: #{id}, lala #{(t2 - t1)} #{inspect msg}")
   end
 end
