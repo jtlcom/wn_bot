@@ -1,9 +1,9 @@
-defmodule PressureTest.MixProject do
+defmodule WhynotBot.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :pressure_test,
+      app: :whynot_bot,
       version: "0.1.0",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :dev,
@@ -27,16 +27,9 @@ defmodule PressureTest.MixProject do
   def applications(_) do
     [
       :poolboy,
-      :quantum,
-      :graphmath,
-      :poison,
-      :fastglobal,
-      :httpoison,
       :timex,
-      :tzdata,
       :jason,
-      :plug_cowboy,
-      :eex_html
+      :plug_cowboy
     ]
   end
 
@@ -45,24 +38,13 @@ defmodule PressureTest.MixProject do
     [
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
-      {:quantum, "~> 2.0"},
       {:timex, "~> 3.0"},
       {:logger_file_backend, "~> 0.0.12"},
-      {:poison, "~> 3.0"},
       {:poolboy, ">= 0.0.0"},
-      {:httpoison, "~> 0.13"},
-      {:graphmath, "~> 1.0"},
       {:changed_reloader,
        git: "http://wn-server-1:8081/huangbo/changed_reloader", only: :dev, tag: "1.5"},
-      {:fastglobal, "~> 1.0"},
-      {:recon, "~> 2.3.6"},
-      {:distillery, "~> 2.0"},
       {:jason, "~> 1.1"},
-      {:crontab, "~> 1.1"},
-      # {:logger_file_backend, "~> 0.0.10"},
-      {:tzdata, "~> 0.5.19"},
-      {:plug_cowboy, "~> 2.0"},
-      {:eex_html, git: "https://github.com/CrowdHailer/eex_html"}
+      {:plug_cowboy, "~> 2.0"}
     ]
   end
 end

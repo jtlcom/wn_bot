@@ -1,38 +1,20 @@
-# This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
-use Mix.Config
-
-# This configuration is loaded before any dependency and is restricted
-# to this project. If another project depends on this project, this
-# file won't be loaded nor affect the parent project. For this reason,
-# if you want to provide default values for your application for
-# 3rd-party users, it should be done in your "mix.exs" file.
-
-# You can configure your application as:
+# This file is responsible for configuring your umbrella
+# and **all applications** and their dependencies with the
+# help of the Config module.
 #
-#     config :pressure_test, key: :value
-#
-# and access this configuration in your application as:
-#
-#     Application.get_env(:pressure_test, :key)
-#
-# You can also configure a 3rd-party app:
-#
-#     config :logger, level: :info
-#
-# config :pressure_test, ip: 'stress.my3d.qq.com'
-# config :pressure_test, port: 9003
+# Note that all applications in your umbrella share the
+# same configuration and dependencies, which is why they
+# all use the same configuration file. If you want different
+# configurations or dependencies per app, it is best to
+# move said applications out of the umbrella.
+import Config
 
-# config :pressure_test, ip: 'realm.my3d.qq.com'
-# config :pressure_test, port: 25005
+config :whynot_bot, port: 8700
+config :whynot_bot, http_port: 9999
 
-config :pressure_test, ip: '192.168.1.184'
-config :pressure_test, port: 8700
-config :pressure_test, http_port: 9999
+config :whynot_bot, recv_buff: 10
 
-config :pressure_test, recv_buff: 10
-
-config :pressure_test,
+config :whynot_bot,
   wetest_api: %{
     apiurl: "http://api.wetest.qq.com",
     secretid: "W0NRWmZBY1dC3rSm",
@@ -40,12 +22,6 @@ config :pressure_test,
     projectid: "b30a017fb2cb54ce762fc54ab83cd903",
     zoneid: 0
   }
-
-config :pressure_test, Scheduler,
-  timezone: "Asia/Shanghai",
-  jobs: []
-
-config :tzdata, :autoupdate, :disabled
 
 config :logger, handle_otp_reports: true, handle_sasl_reports: true
 config :logger, backends: [:console, {LoggerFileBackend, :log_file}]

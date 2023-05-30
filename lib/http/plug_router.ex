@@ -6,11 +6,6 @@ defmodule PlugRouter do
   plug(:match)
   plug(:dispatch)
 
-  get "/" do
-    html = Lala.generate_html()
-    send_resp(conn, 200, html)
-  end
-
   get "/get_info" do
     data = Http.Ets.load_value(Map.get(conn, :remote_ip))
     send_resp(conn, 200, "#{inspect(data)}")

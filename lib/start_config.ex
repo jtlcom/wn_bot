@@ -3,9 +3,8 @@ defmodule StartConfig do
 
   def config() do
     %{
-      server_ip: '127.0.0.1',
-      server_port: 6666,
-      strategy: :once_time
+      server_ip: '192.168.1.129',
+      server_port: 6666
     }
   end
 

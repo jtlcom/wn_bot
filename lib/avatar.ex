@@ -45,10 +45,9 @@ defmodule Avatar do
   use GenServer
   require Logger
   require Utils
-  # import ExchangeCode
 
   @loop_time 150
-  @loop_delay 3_000_000
+  @loop_delay 5000
   @packet 4
 
   def start_link(args, opts \\ []) do
@@ -71,23 +70,19 @@ defmodule Avatar do
         :binary,
         packet: @packet,
         active: true,
-        recbuf: 1024 * 1024 * Application.get_env(:pressure_test, :recv_buff, 20),
+        recbuf: 1024 * 1024 * Application.get_env(:whynot_bot, :recv_buff, 20),
         keepalive: true,
         nodelay: true
       ])
 
-    :inet.setopts(conn, [{:high_watermark, 131_072}])
-    :inet.setopts(conn, [{:low_watermark, 65536}])
-
     Client.send_msg(conn, ["login", name])
-    # MsgCounter.res_onlines_add()
+    Avatar.Ets.insert(name, self())
 
     end_time = Utils.timestamp(:ms)
     IO.inspect(end_time - start_time)
 
     Upload.log("conn: #{inspect(conn)},   robot: #{name}, init used: #{end_time - start_time}")
 
-    # Upload.trans_info("robot #{name} login !!!", end_time - start_time, Utils.timestamp)
     {:ok, %AvatarDef{account: name, gid: born_state, conn: conn}}
   end
 
@@ -109,7 +104,7 @@ defmodule Avatar do
 
   def handle_info({:tcp, socket, data}, %{id: id, account: account} = player) do
     MsgCounter.recv_count_add()
-    decoded = DropMsg.match(data)
+    decoded = SimpleMsgPack.unpack!(data)
     Logger.info("recvd message------------------------------------------------:
     \t\t avatar: \t #{id}
     \t\t account: \t #{account}
@@ -120,9 +115,6 @@ defmodule Avatar do
 
     {new_player} =
       case decoded do
-        :no_need_handle ->
-          {player}
-
         ["info", evts] ->
           AvatarEvent.handle_info(evts, player)
 
@@ -131,6 +123,7 @@ defmodule Avatar do
           IO.puts("login!!!!!!!")
           new_player = player |> login_update(svr_data)
           Client.send_msg(player.conn, ["login_done"])
+          MsgCounter.res_onlines_add()
           :erlang.send_after(@loop_delay, self(), {:loop})
 
           {new_player}
@@ -167,7 +160,6 @@ defmodule Avatar do
   end
 
   def handle_info({:reply, msg}, %{conn: conn} = player) do
-    # Logger.info "reply to server #{inspect msg}"
     [head | _] = ex_msg = msg
 
     with [module | _] <- String.split(head, ":"),
@@ -179,7 +171,6 @@ defmodule Avatar do
         # Process.put(head, Utils.timestamp(:ms))
         Client.send_msg(conn, ex_msg)
         # end_time = Utils.timestamp(:ms)
-        # Upload.trans_info(head, end_time - start_time, Utils.timestamp())
     end
 
     {:noreply, player}
@@ -197,24 +188,6 @@ defmodule Avatar do
 
   def handle_info(_msg, player) do
     # Logger.info "what msg #{inspect msg}"
-    {:noreply, player}
-  end
-
-  # 一起开始
-  def handle_cast(:begin, player) do
-    name = "zwhost_#{player.id}"
-    Client.send_msg(player.conn, ["account:auth", 0, name])
-    # MsgCounter.res_onlines_add()
-    {:noreply, player}
-  end
-
-  def handle_cast({:show_data}, player) do
-    IO.puts("player: #{inspect(player, pretty: true)}")
-    {:noreply, player}
-  end
-
-  def handle_cast({:show_data, key}, player) do
-    IO.puts("#{key}: #{inspect(Map.get(player, key), pretty: true)}")
     {:noreply, player}
   end
 
@@ -258,9 +231,6 @@ defmodule Avatar do
   end
 
   def handle_cast({:reply, msg}, %{conn: conn, id: _id} = player) do
-    # IO.inspect "#{player.id}  #{Utils.timestamp(:ms)}"
-    # Logger.info("reply to server: #{inspect(msg)}")
-    # start_time = Utils.timestamp(:ms)
     [head | _] = ex_msg = msg
 
     # Logger.info ex_msg
@@ -274,7 +244,6 @@ defmodule Avatar do
         Client.send_msg(conn, ex_msg)
         Process.put(head, Utils.timestamp(:ms))
         # end_time = Utils.timestamp(:ms)
-        # Upload.trans_info(head, end_time - start_time, Utils.timestamp())
     end
 
     {:noreply, player}
@@ -298,7 +267,6 @@ defmodule Avatar do
     Logger.info("#{inspect(ex_msg)}")
     Client.send_msg(conn, ex_msg)
     # end_time = Utils.timestamp(:ms)
-    Upload.trans_info(Enum.at(ex_msg, 0), Enum.random(50..150), Utils.timestamp())
     {:noreply, new_player}
   end
 
@@ -319,7 +287,6 @@ defmodule Avatar do
 
     :gen_tcp.close(conn)
     # end_time = Utils.timestamp(:ms)
-    Upload.trans_info("login out", Enum.random(50..150), Utils.timestamp())
     :ok
   end
 
@@ -333,7 +300,6 @@ defmodule Avatar do
 
     :gen_tcp.close(conn)
     # end_time = Utils.timestamp(:ms)
-    Upload.trans_info("login out", Enum.random(50..150), Utils.timestamp())
     :ok
   end
 

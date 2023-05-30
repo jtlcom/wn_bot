@@ -28,7 +28,6 @@ defmodule AvatarLoop do
   # -----------------
   def loop(player) do
     IO.puts("do_loop: player: #{player.account}")
-    Avatar.Ets.insert(player.account, self())
 
     cond do
       # city_warnning(player) ->

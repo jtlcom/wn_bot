@@ -1,19 +1,12 @@
 defmodule Client do
-  # import ExchangeCode
-
   require Logger
   # @timeout 9_999_999
-
-  def start(account, born_state) do
-    Realm.start_avatar(account, born_state)
-  end
 
   def send_msg(conn, msg) do
     # Process.sleep(50)
     # t1 = Utils.timestamp(:ms)
     id = Process.get(:cmd_dic, -1) + 1
     Process.put(:cmd_dic, id)
-    Upload.res_log(msg)
     bin = SimpleMsgPack.pack!(msg) |> IO.iodata_to_binary()
     # bin = :erlang.term_to_binary(msg)
     bin1 = <<id::unsigned-integer-size(32), bin::binary>>

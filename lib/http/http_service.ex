@@ -2,7 +2,7 @@ defmodule HttpService do
   require Logger
 
   def start() do
-    port = Application.get_env(:pressure_test, :http_port)
+    port = Application.get_env(:whynot_bot, :http_port)
 
     children = [
       {Plug.Cowboy, scheme: :http, plug: PlugRouter, options: [port: port]}

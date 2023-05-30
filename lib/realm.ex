@@ -5,10 +5,6 @@ defmodule Realm do
     Avatar.Supervisor.start_child({id, born_state}, name: {:global, {:name, Guid.name(id)}})
   end
 
-  def start_statistics() do
-    StatisticsInfo.Supervisor.start_link()
-  end
-
   def control(avatar, request) do
     GenServer.cast(avatar, request)
   end
