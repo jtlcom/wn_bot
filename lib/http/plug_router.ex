@@ -21,6 +21,8 @@ defmodule PlugRouter do
 
         case Jason.decode!(body) do
           %{
+            "ip" => ip,
+            "port" => port,
             "name_prefix" => name_prefix,
             "from" => from,
             "to" => to,
@@ -29,6 +31,8 @@ defmodule PlugRouter do
             Logger.debug("/save_info params: #{inspect(params)}")
 
             Http.Ets.insert(conn |> Map.get(:remote_ip), %{
+              ip: ip,
+              port: port,
               name_prefix: name_prefix,
               from: from,
               to: to,
@@ -48,8 +52,8 @@ defmodule PlugRouter do
 
   post "/login" do
     case Http.Ets.load_value(Map.get(conn, :remote_ip)) do
-      %{name_prefix: name_prefix, from: from, to: to, born_state: born_state} ->
-        StartPressure.go(name_prefix, from, to, born_state)
+      %{ip: ip, port: port, name_prefix: name_prefix, from: from, to: to, born_state: born_state} ->
+        StartPressure.go(ip, port, name_prefix, from, to, born_state)
         send_resp(conn, 200, "ok")
 
       _ ->

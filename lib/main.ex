@@ -13,7 +13,7 @@ defmodule Main do
     opts = [strategy: :one_for_one, name: WhynotBot.Supervisor]
     re = Supervisor.start_link(children, opts)
     :observer.start()
-    # StartPressure.go("bot_1_", 1, 2, 1)
+    # StartPressure.go('192.168.1.129', 6666, "bot_1_", 1, 2, 1)
     re
   end
 
@@ -21,6 +21,7 @@ defmodule Main do
     SimpleStatistics.init_ets()
     Avatar.Ets.start()
     Http.Ets.start()
+    Count.Ets.start()
     MsgCounter.init()
   end
 end

@@ -30,7 +30,5 @@ defmodule Client do
         ")
         :ok
     end
-
-    MsgCounter.res_count_add()
   end
 end

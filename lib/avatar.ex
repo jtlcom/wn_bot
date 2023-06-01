@@ -46,15 +46,14 @@ defmodule Avatar do
   require Logger
   require Utils
 
-  @loop_time 150
   @loop_delay 5000
-  @packet 4
+  def packet, do: 4
 
   def start_link(args, opts \\ []) do
     GenServer.start_link(__MODULE__, args, opts)
   end
 
-  def init({name, born_state}) do
+  def init({server_ip, server_port, name, born_state}) do
     # IO.inspect id
     start_time = Utils.timestamp(:ms)
     name = "#{name}"
@@ -62,13 +61,11 @@ defmodule Avatar do
     Process.put(:avatar_id, name)
     Process.put(:avatar_name, name)
     Process.put(:svr_aid, name)
-    # Process.flag(:trap_exit, true)
-    [server_ip, server_port] = StartConfig.server_ip_port()
-    # Logger.info "#{server_ip}, #{server_port}"
+
     {:ok, conn} =
       :gen_tcp.connect(server_ip, server_port, [
         :binary,
-        packet: @packet,
+        packet: packet(),
         active: true,
         recbuf: 1024 * 1024 * Application.get_env(:whynot_bot, :recv_buff, 20),
         keepalive: true,
@@ -103,7 +100,6 @@ defmodule Avatar do
   end
 
   def handle_info({:tcp, socket, data}, %{id: id, account: account} = player) do
-    MsgCounter.recv_count_add()
     decoded = SimpleMsgPack.unpack!(data)
     Logger.info("recvd message------------------------------------------------:
     \t\t avatar: \t #{id}
