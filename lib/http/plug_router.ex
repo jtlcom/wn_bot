@@ -31,7 +31,7 @@ defmodule PlugRouter do
             Logger.debug("/save_info params: #{inspect(params)}")
 
             Http.Ets.insert(conn |> Map.get(:remote_ip), %{
-              ip: ip,
+              ip: '#{ip}',
               port: port,
               name_prefix: name_prefix,
               from: from,
@@ -93,9 +93,10 @@ defmodule PlugRouter do
         Logger.debug("/forward body: #{inspect(body)}")
 
         case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
-          {%{"x" => to_x, "y" => to_y} = params, %{name_prefix: name_prefix, from: from, to: to}} ->
+          {%{"x" => to_x, "y" => to_y, "index" => troop_index} = params,
+           %{name_prefix: name_prefix, from: from, to: to}} ->
             Logger.debug("/forward params: #{inspect(params)}")
-            Gm.forward(name_prefix, from, to, to_x, to_y)
+            Gm.forward(name_prefix, from, to, to_x, to_y, troop_index)
             send_resp(conn, 200, "ok")
 
           _ ->
@@ -116,10 +117,15 @@ defmodule PlugRouter do
         Logger.debug("/attack body: #{inspect(body)}")
 
         case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
-          {%{"x" => to_x, "y" => to_y, "times" => times, "is_back?" => is_back?} = params,
-           %{name_prefix: name_prefix, from: from, to: to}} ->
+          {%{
+             "x" => to_x,
+             "y" => to_y,
+             "times" => times,
+             "is_back?" => is_back?,
+             "index" => troop_index
+           } = params, %{name_prefix: name_prefix, from: from, to: to}} ->
             Logger.debug("/attack params: #{inspect(params)}")
-            Gm.attack(name_prefix, from, to, to_x, to_y, times, is_back?)
+            Gm.attack(name_prefix, from, to, to_x, to_y, troop_index, times, is_back?)
             send_resp(conn, 200, "ok")
 
           _ ->
