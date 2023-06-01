@@ -197,8 +197,10 @@ defmodule Avatar do
     {:noreply, player}
   end
 
-  def handle_cast({:forward, x, y}, player) do
-    troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.min()
+  def handle_cast({:forward, x, y, troop_index}, player) do
+    troop_guid =
+      player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.sort() |> Enum.at(troop_index - 1)
+
     pos = [x, y]
     Client.send_msg(player.conn, ["op", "forward", [troop_guid, pos]])
     IO.puts("troop_guid: #{inspect(troop_guid)}}")
@@ -206,8 +208,10 @@ defmodule Avatar do
     {:noreply, player}
   end
 
-  def handle_cast({:attack, x, y, times, is_back?}, player) do
-    troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.min()
+  def handle_cast({:attack, x, y, troop_index, times, is_back?}, player) do
+    troop_guid =
+      player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.sort() |> Enum.at(troop_index - 1)
+
     pos = [x, y]
     Client.send_msg(player.conn, ["op", "attack", [troop_guid, pos, times, is_back?]])
     IO.puts("troop_guid: #{inspect(troop_guid)}}")

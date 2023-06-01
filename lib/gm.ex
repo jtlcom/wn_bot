@@ -15,19 +15,33 @@ defmodule Gm do
     Realm.broadcast({:atk})
   end
 
-  def forward(name_prefix, from_id, to_id, x, y) do
-    Enum.each(from_id..to_id, fn this_id ->
-      account = name_prefix <> "#{this_id}"
-      this_pid = Avatar.Ets.load_value(account)
-      Router.route(this_pid, {:forward, x, y})
+  def forward(name_prefix, from_id, to_id, x, y, 0) do
+    Enum.each(1..5, fn this_index ->
+      forward(name_prefix, from_id, to_id, x, y, this_index)
+      Process.sleep(1500)
     end)
   end
 
-  def attack(name_prefix, from_id, to_id, x, y, times, is_back?) do
+  def forward(name_prefix, from_id, to_id, x, y, troop_index) do
     Enum.each(from_id..to_id, fn this_id ->
       account = name_prefix <> "#{this_id}"
       this_pid = Avatar.Ets.load_value(account)
-      Router.route(this_pid, {:attack, x, y, times, is_back?})
+      Router.route(this_pid, {:forward, x, y, troop_index})
+    end)
+  end
+
+  def attack(name_prefix, from_id, to_id, x, y, 0, times, is_back?) do
+    Enum.each(1..5, fn this_index ->
+      attack(name_prefix, from_id, to_id, x, y, this_index, times, is_back?)
+      Process.sleep(1500)
+    end)
+  end
+
+  def attack(name_prefix, from_id, to_id, x, y, troop_index, times, is_back?) do
+    Enum.each(from_id..to_id, fn this_id ->
+      account = name_prefix <> "#{this_id}"
+      this_pid = Avatar.Ets.load_value(account)
+      Router.route(this_pid, {:attack, x, y, troop_index, times, is_back?})
     end)
   end
 
