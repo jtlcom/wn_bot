@@ -9,7 +9,6 @@
 # move said applications out of the umbrella.
 import Config
 
-config :whynot_bot, port: 8700
 config :whynot_bot, http_port: 9999
 
 config :whynot_bot, recv_buff: 10

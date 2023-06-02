@@ -27,8 +27,6 @@ defmodule AvatarLoop do
   # 9. 什么也不做
   # -----------------
   def loop(player) do
-    IO.puts("do_loop: player: #{player.account}")
-
     cond do
       # city_warnning(player) ->
       #   {:ok, player}

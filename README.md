@@ -4,13 +4,7 @@
 
 ## HTTP操作
 
-- IP/PORT: 192.168.1.129:9999
-- 获取连接信息: [GET, /get_info]
-- 上传连接信息: [POST, /save_info, %{ip: string, port: int, name_prefix: string, from: int, to: int, born_state: int}]
-- 机器人登录: [POST, /login, %{}]
-- 使用GM: [POST, /gm, %{params: [string]}]
-- 行军: [POST, /forward, %{x: int, y: int, index: troop_index}]
-- 攻占: [POST, /attack, %{x: int, y: int, index: troop_index, times: int, is_back?: boolean}]
+- 使用postman并import此文件([点击下载](wn_bot.postman_collection.json))
 
 ## Shell操作
 

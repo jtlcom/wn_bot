@@ -53,7 +53,7 @@ defmodule PlugRouter do
   post "/login" do
     case Http.Ets.load_value(Map.get(conn, :remote_ip)) do
       %{ip: ip, port: port, name_prefix: name_prefix, from: from, to: to, born_state: born_state} ->
-        StartPressure.go(ip, port, name_prefix, from, to, born_state)
+        HttpMgr.cast({:apply, StartPressure, :go, [ip, port, name_prefix, from, to, born_state]})
         send_resp(conn, 200, "ok")
 
       _ ->

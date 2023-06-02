@@ -5,7 +5,8 @@ defmodule Main do
 
   def start(_type, _args) do
     children = [
-      supervisor(Avatar.Supervisor, [])
+      supervisor(Avatar.Supervisor, []),
+      %{id: HttpMgr, start: {HttpMgr, :start_link, [HttpMgr]}}
     ]
 
     HttpService.start()

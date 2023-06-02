@@ -146,8 +146,6 @@ defmodule Avatar do
           new_player
 
         {:sleep, min} ->
-          IO.puts("sleep sleep  sleep  sleep  sleep")
-          IO.puts("sleep sleep  sleep  sleep  sleep")
           :erlang.send_after(min * 60 * 1_000, self(), {:loop})
           player
       end

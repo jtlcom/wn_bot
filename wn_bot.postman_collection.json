@@ -1,0 +1,160 @@
+{
+	"info": {
+		"_postman_id": "096e6b3c-7158-4721-a64a-3ccbdd9bcb9b",
+		"name": "wn_bot",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "14970920"
+	},
+	"item": [
+		{
+			"name": "http://tianlin:9999/get_info # 获取连接信息",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://tianlin:9999/get_info",
+					"protocol": "http",
+					"host": [
+						"tianlin"
+					],
+					"port": "9999",
+					"path": [
+						"get_info"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://tianlin:9999/save_info # 上传连接信息",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"ip\": \"192.168.1.129\", // 目标服务器IP\r\n    \"port\": 6666, // 目标服务器端口\r\n    \"name_prefix\": \"bot_2_\", // 角色名前缀\r\n    \"from\": 1, // ID开始\r\n    \"to\": 5, // ID结束\r\n    \"born_state\": 2 // 出生阵营\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://tianlin:9999/save_info",
+					"protocol": "http",
+					"host": [
+						"tianlin"
+					],
+					"port": "9999",
+					"path": [
+						"save_info"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://tianlin:9999/login # 机器人登录",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://tianlin:9999/login",
+					"protocol": "http",
+					"host": [
+						"tianlin"
+					],
+					"port": "9999",
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://tianlin:9999/gm # 使用GM",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"params\": [\"god\", 30]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://tianlin:9999/gm",
+					"protocol": "http",
+					"host": [
+						"tianlin"
+					],
+					"port": "9999",
+					"path": [
+						"gm"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://tianlin:9999/forward # 行军",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"x\": 111,\r\n    \"y\": 222,\r\n    \"index\": 0 // 指定队伍1-5 # 0表示全部队伍\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://tianlin:9999/forward",
+					"protocol": "http",
+					"host": [
+						"tianlin"
+					],
+					"port": "9999",
+					"path": [
+						"forward"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://tianlin:9999/attack # 攻占",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"x\": 111,\r\n    \"y\": 222,\r\n    \"index\": 0, // 指定队伍1-5 # 0表示全部队伍\r\n    \"times\": 1, // 攻打次数 -1表示无限次\r\n    \"is_back?\": false // 打完是否返回\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://tianlin:9999/attack",
+					"protocol": "http",
+					"host": [
+						"tianlin"
+					],
+					"port": "9999",
+					"path": [
+						"attack"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
