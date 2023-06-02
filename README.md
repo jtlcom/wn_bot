@@ -4,7 +4,8 @@
 
 ## HTTP操作
 
-- 使用postman并import此文件([点击下载](wn_bot.postman_collection.json))
+- 使用postman
+- https://www.postman.com/jtlcom/workspace/wn-bot
 
 ## Shell操作
 
