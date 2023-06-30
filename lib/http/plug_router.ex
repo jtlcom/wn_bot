@@ -27,9 +27,7 @@ defmodule PlugRouter do
             "from" => from,
             "to" => to,
             "born_state" => born_state
-          } = params ->
-            Logger.debug("/save_info params: #{inspect(params)}")
-
+          } ->
             Http.Ets.insert(conn |> Map.get(:remote_ip), %{
               ip: '#{ip}',
               port: port,
@@ -71,7 +69,6 @@ defmodule PlugRouter do
 
         case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
           {%{"params" => params}, %{name_prefix: name_prefix, from: from, to: to}} ->
-            Logger.debug("/gm params: #{inspect(params)}")
             Gm.gm(name_prefix, from, to, params)
             send_resp(conn, 200, "ok")
 
@@ -93,9 +90,8 @@ defmodule PlugRouter do
         Logger.debug("/forward body: #{inspect(body)}")
 
         case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
-          {%{"x" => to_x, "y" => to_y, "index" => troop_index} = params,
+          {%{"x" => to_x, "y" => to_y, "index" => troop_index},
            %{name_prefix: name_prefix, from: from, to: to}} ->
-            Logger.debug("/forward params: #{inspect(params)}")
             Gm.forward(name_prefix, from, to, to_x, to_y, troop_index)
             send_resp(conn, 200, "ok")
 
@@ -123,9 +119,36 @@ defmodule PlugRouter do
              "times" => times,
              "is_back?" => is_back?,
              "index" => troop_index
-           } = params, %{name_prefix: name_prefix, from: from, to: to}} ->
-            Logger.debug("/attack params: #{inspect(params)}")
+           }, %{name_prefix: name_prefix, from: from, to: to}} ->
             Gm.attack(name_prefix, from, to, to_x, to_y, troop_index, times, is_back?)
+            send_resp(conn, 200, "ok")
+
+          _ ->
+            send_resp(conn, 200, "error")
+        end
+
+      _ ->
+        send_resp(conn, 200, "error")
+    end
+  end
+
+  post "/apply" do
+    length =
+      conn.req_headers |> Map.new() |> Map.get("content-length", "0") |> String.to_integer()
+
+    case length > 0 && Plug.Conn.read_body(conn, length: length) do
+      {:ok, body, conn} ->
+        Logger.debug("/apply body: #{inspect(body)}")
+
+        case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
+          {%{"mod" => mod, "func" => func, "params" => params},
+           %{name_prefix: name_prefix, from: from, to: to}} ->
+            Enum.each(from..to, fn this_id ->
+              account = name_prefix <> "#{this_id}"
+              this_pid = Avatar.Ets.load_value(account)
+              Router.route(this_pid, {:apply, mod, func, params})
+            end)
+
             send_resp(conn, 200, "ok")
 
           _ ->

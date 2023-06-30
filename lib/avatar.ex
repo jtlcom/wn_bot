@@ -195,6 +195,11 @@ defmodule Avatar do
     {:noreply, player}
   end
 
+  def handle_cast({:apply, mod, func, params}, player) do
+    Client.send_msg(player.conn, [mod, func, params])
+    {:noreply, player}
+  end
+
   def handle_cast({:forward, x, y, troop_index}, player) do
     troop_guid =
       player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.sort() |> Enum.at(troop_index - 1)
