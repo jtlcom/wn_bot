@@ -30,7 +30,8 @@ defmodule StartPressure do
       ])
 
     case try_one do
-      {:ok, _conn} ->
+      {:ok, conn} ->
+        :gen_tcp.close(conn)
         strategy(:once_time, server_ip, server_port, name_prefix, from_id, to_id, born_state)
 
       _ ->
