@@ -72,7 +72,7 @@ defmodule Avatar do
         nodelay: true
       ])
 
-    Client.send_msg(conn, ["login", name])
+    Client.send_msg(conn, ["login", name, "111111"])
     Avatar.Ets.insert(name, self())
 
     end_time = Utils.timestamp(:ms)
