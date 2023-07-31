@@ -29,6 +29,7 @@ defmodule WhynotBot.MixProject do
       :poolboy,
       :timex,
       :jason,
+      :httpoison,
       :plug_cowboy
     ]
   end
@@ -44,6 +45,7 @@ defmodule WhynotBot.MixProject do
       {:changed_reloader,
        git: "http://wn-server-1:8081/huangbo/changed_reloader", only: :dev, tag: "1.5"},
       {:jason, "~> 1.1"},
+      {:httpoison, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"}
     ]
   end

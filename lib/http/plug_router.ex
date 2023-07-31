@@ -141,12 +141,11 @@ defmodule PlugRouter do
         Logger.debug("/apply body: #{inspect(body)}")
 
         case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
-          {%{"mod" => mod, "func" => func, "params" => params},
-           %{name_prefix: name_prefix, from: from, to: to}} ->
+          {%{"type" => type, "params" => params}, %{name_prefix: name_prefix, from: from, to: to}} ->
             Enum.each(from..to, fn this_id ->
               account = name_prefix <> "#{this_id}"
               this_pid = Avatar.Ets.load_value(account)
-              Router.route(this_pid, {:apply, mod, func, params})
+              Router.route(this_pid, {:apply, type, params})
             end)
 
             send_resp(conn, 200, "ok")

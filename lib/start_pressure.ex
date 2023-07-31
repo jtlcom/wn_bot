@@ -9,12 +9,32 @@ defmodule StartPressure do
   def start_single(server_ip, server_port, name_prefix, id, born_state) do
     account = name_prefix <> "#{id}"
 
-    case Realm.start_avatar(server_ip, server_port, account, born_state) do
-      {:ok, pid} ->
-        pid
+    case HTTPoison.post(
+           "http://192.168.1.92:8080/auth/whynot",
+           %{"account" => account, "password" => "111111"} |> URI.encode_query(),
+           [{"Content-Type", "application/x-www-form-urlencoded"}],
+           timeout: 5000
+         ) do
+      {:ok, %{body: body}} ->
+        case Jason.decode!(body) do
+          %{"login_with_data" => login_with_data, "token" => token} ->
+            case Avatar.Supervisor.start_child(
+                   {server_ip, server_port, account, born_state, token, login_with_data},
+                   name: {:global, {:name, Guid.name(id)}}
+                 ) do
+              {:ok, pid} ->
+                pid
 
-      _ ->
-        nil
+              _ ->
+                nil
+            end
+
+          _ ->
+            :error
+        end
+
+      {:error, _error} ->
+        :error
     end
   end
 

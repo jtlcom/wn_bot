@@ -1,12 +1,6 @@
 defmodule Realm do
   require Logger
 
-  def start_avatar(server_ip, server_port, id, born_state) do
-    Avatar.Supervisor.start_child({server_ip, server_port, id, born_state},
-      name: {:global, {:name, Guid.name(id)}}
-    )
-  end
-
   def control(avatar, request) do
     GenServer.cast(avatar, request)
   end

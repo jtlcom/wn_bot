@@ -53,7 +53,7 @@ defmodule Avatar do
     GenServer.start_link(__MODULE__, args, opts)
   end
 
-  def init({server_ip, server_port, name, born_state}) do
+  def init({server_ip, server_port, name, born_state, token, login_with_data}) do
     # IO.inspect id
     start_time = Utils.timestamp(:ms)
     name = "#{name}"
@@ -72,7 +72,7 @@ defmodule Avatar do
         nodelay: true
       ])
 
-    Client.send_msg(conn, ["login", name, "111111"])
+    Client.send_msg(conn, ["login", name, token, login_with_data, false])
     Avatar.Ets.insert(name, self())
 
     end_time = Utils.timestamp(:ms)
@@ -195,8 +195,8 @@ defmodule Avatar do
     {:noreply, player}
   end
 
-  def handle_cast({:apply, mod, func, params}, player) do
-    Client.send_msg(player.conn, [mod, func, params])
+  def handle_cast({:apply, type, params}, player) do
+    Client.send_msg(player.conn, List.wrap(type) ++ List.wrap(params))
     {:noreply, player}
   end
 
