@@ -23,8 +23,9 @@ defmodule Client do
         Logger.info("send error is #{inspect(send_error)}")
 
       _ ->
+        aid = Process.get(:svr_aid, 0)
         Logger.info("send message------------------------------------------------:
-        \t\t avatar: \t #{id}
+        \t\t avatar: \t #{aid}
         \t\t time: \t #{inspect(:calendar.local_time())}
         \t\t msg: \t #{inspect(msg, pretty: true, limit: :infinity)}
         ")

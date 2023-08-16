@@ -46,7 +46,6 @@ defmodule Avatar do
   require Logger
   require Utils
 
-  @loop_delay 5000
   def packet, do: 4
 
   def start_link(args, opts \\ []) do
@@ -60,7 +59,7 @@ defmodule Avatar do
     Guid.register(self(), name)
     Process.put(:avatar_id, name)
     Process.put(:avatar_name, name)
-    Process.put(:svr_aid, name)
+    Process.put(:last_op_ts, System.system_time(:second))
 
     {:ok, conn} =
       :gen_tcp.connect(server_ip, server_port, [
@@ -73,7 +72,6 @@ defmodule Avatar do
       ])
 
     Client.send_msg(conn, ["login", name, token, login_with_data, false])
-    Avatar.Ets.insert(name, self())
 
     end_time = Utils.timestamp(:ms)
     IO.inspect(end_time - start_time)
@@ -99,7 +97,10 @@ defmodule Avatar do
     {:stop, {:shutdown, :tcp_timeout}, player}
   end
 
-  def handle_info({:tcp, socket, data}, %{id: id, account: account} = player) do
+  def handle_info(
+        {:tcp, socket, data},
+        %AvatarDef{id: id, account: account, gid: born_state, conn: conn} = player
+      ) do
     decoded = SimpleMsgPack.unpack!(data)
     Logger.info("recvd message------------------------------------------------:
     \t\t avatar: \t #{id}
@@ -109,48 +110,100 @@ defmodule Avatar do
     \t\t msg: \t #{inspect(decoded, pretty: true, limit: :infinity)}
     ")
 
-    {new_player} =
+    new_player =
       case decoded do
-        ["info", evts] ->
-          AvatarEvent.handle_info(evts, player)
+        ["info", ["login:choose_born_state", _id, _params]] ->
+          Process.put(:new, true)
+          Client.send_msg(conn, ["login:choose_born_state", born_state])
+          player
+
+        ["info" | event_msg] ->
+          event_msg
+          |> Enum.reduce(player, fn each_event_msg, acc ->
+            AvatarEvent.handle_event(each_event_msg, acc)
+          end)
+          |> case do
+            %AvatarDef{} = new_player ->
+              new_player
+
+            _ ->
+              player
+          end
+
+        ["evt" | event_msg] ->
+          event_msg
+          |> Enum.reduce(player, fn each_event_msg, acc ->
+            AvatarEvent.handle_event(each_event_msg, acc)
+          end)
+          |> case do
+            %AvatarDef{} = new_player ->
+              new_player
+
+            _ ->
+              player
+          end
 
         ["login", svr_data] ->
           # Supervisor.which_children(Avatars)
-          IO.puts("login!!!!!!!")
-          new_player = player |> login_update(svr_data)
-          Client.send_msg(player.conn, ["login_done"])
-          MsgCounter.res_onlines_add()
-          :erlang.send_after(@loop_delay, self(), {:loop})
+          case player |> login_update(svr_data) do
+            %AvatarDef{city_pos: city_pos, conn: conn} = new_player ->
+              Client.send_msg(conn, ["login_done"])
+              Client.send_msg(conn, ["see", city_pos, 10])
+              Process.put(:svr_aid, new_player.id)
+              Avatar.Ets.insert(account, %{pid: self(), aid: new_player.id})
+              MsgCounter.res_onlines_add()
+              Process.send_after(self(), {:loop}, 1000)
 
-          {new_player}
+              if Process.get(:new) do
+                Client.send_msg(conn, ["gm", "god"])
+                Client.send_msg(conn, ["gm", "init_bot"])
+              end
 
-        data ->
-          # IO.inspect data
-          case handle_info(data, player) do
-            {:noreply, new_player} ->
-              {new_player}
+              new_player
 
             _ ->
-              {player}
+              player
           end
+
+        _ ->
+          player
       end
 
     {:noreply, new_player}
   end
 
-  def handle_info({:loop}, %{} = player) do
-    new_player =
-      case AvatarLoop.loop(player) do
-        {:ok, new_player} ->
-          :erlang.send_after(@loop_delay, self(), {:loop})
-          new_player
+  def handle_info({:loop}, %AvatarDef{conn: conn, city_pos: city_pos} = player) do
+    now = System.system_time(:second)
+    last_op_ts = Process.get(:last_op_ts, 0)
+    delta_sec = trunc(now - last_op_ts)
+    Process.send_after(self(), {:loop}, 1000)
 
-        {:sleep, min} ->
-          :erlang.send_after(min * 60 * 1_000, self(), {:loop})
-          player
-      end
+    cond do
+      delta_sec >= 15 ->
+        Process.put(:last_op_ts, now)
+        Client.send_msg(conn, ["ping", 1])
+        Client.send_msg(conn, ["see", city_pos, 10])
 
-    {:noreply, new_player}
+        new_player =
+          case AvatarLoop.loop(player) do
+            {:ok, new_player} ->
+              new_player
+
+            # {:sleep, min} ->
+            #   :erlang.send_after(min * 60 * 1_000, self(), {:loop})
+            #   player
+
+            _ ->
+              player
+          end
+
+        {:noreply, new_player}
+
+      true ->
+        # Logger.info("player: #{inspect(player.units, pretty: true, limit: :infinity)}")
+        # Logger.info("player: #{inspect(player.fixed_units, pretty: true, limit: :infinity)}")
+        {:noreply, player}
+    end
   end
 
   def handle_info({:reply, msg}, %{conn: conn} = player) do
@@ -168,16 +221,6 @@ defmodule Avatar do
     end
 
     {:noreply, player}
-  end
-
-  def handle_info(["evt" | event_msg], player) do
-    player1 =
-      event_msg
-      |> Enum.reduce(player, fn each_event_msg, acc ->
-        AvatarEvent.handle_event(each_event_msg, acc)
-      end)
-
-    {:noreply, player1}
   end
 
   def handle_info(_msg, player) do
@@ -219,6 +262,50 @@ defmodule Avatar do
     Client.send_msg(player.conn, ["op", "attack", [troop_guid, pos, times, is_back?]])
     IO.puts("troop_guid: #{inspect(troop_guid)}}")
     {:noreply, player}
+  end
+
+  def handle_cast({:stop, troop_index}, player) do
+    troop_guid =
+      player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.sort() |> Enum.at(troop_index - 1)
+
+    Client.send_msg(player.conn, ["op", "stop", [troop_guid]])
+    IO.puts("troop_guid: #{inspect(troop_guid)}}")
+    {:noreply, player}
+  end
+
+  def handle_cast({:defend, troop_index, x, y}, player) do
+    troop_guid =
+      player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.sort() |> Enum.at(troop_index - 1)
+
+    pos = [x, y]
+    Client.send_msg(player.conn, ["op", "defend", [troop_guid, pos]])
+    IO.puts("troop_guid: #{inspect(troop_guid)}}")
+    {:noreply, player}
+  end
+
+  def handle_cast({:back, troop_index}, player) do
+    troop_guid =
+      player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.sort() |> Enum.at(troop_index - 1)
+
+    Client.send_msg(player.conn, ["op", "back", [troop_guid]])
+    IO.puts("troop_guid: #{inspect(troop_guid)}}")
+    {:noreply, player}
+  end
+
+  def handle_cast({:build, build_id}, %AvatarDef{grids: grids} = player) do
+    Enum.find(grids, fn
+      {_this_pos, %{"tid" => 1} = _this_data} -> true
+      _ -> false
+    end)
+    |> case do
+      {this_pos, _this_data} ->
+        Client.send_msg(player.conn, ["op", "build", [this_pos, build_id, "营帐"]])
+        IO.puts("pos: #{inspect(this_pos)}")
+        {:noreply, player}
+
+      _ ->
+        {:noreply, player}
+    end
   end
 
   def handle_cast({:gm, params}, player) do
@@ -311,7 +398,7 @@ defmodule Avatar do
     :ok
   end
 
-  def login_update(player, svr_data) do
+  def login_update(%AvatarDef{} = player, svr_data) do
     buildings = Map.get(svr_data, "buildings")
     city_pos = Map.get(svr_data, "city_pos")
     gid = Map.get(svr_data, "gid")
@@ -323,45 +410,36 @@ defmodule Avatar do
     points = Map.get(svr_data, "points")
     troops = Map.get(svr_data, "troops")
 
-    %AvatarDef{
-      player
-      | buildings: buildings,
-        city_pos: city_pos,
-        gid: gid,
-        grids: grids,
-        grids_limit: grids_limit,
-        heros: heros,
-        id: id,
-        name: name,
-        points: points,
-        troops: troops
-    }
+    struct(player, %{
+      buildings: buildings,
+      city_pos: city_pos,
+      gid: gid,
+      grids: grids,
+      grids_limit: grids_limit,
+      heros: heros,
+      id: id,
+      name: name,
+      points: points,
+      troops: troops
+    })
   end
 
   def analyze_verse(player, type) do
     case type do
       :attack ->
         player.units
-        |> Enum.map(fn
-          {pos, %{"aid" => aid} = _pos_data} ->
-            if aid == player.id, do: pos, else: nil
-
-          _ ->
-            nil
+        |> Enum.flat_map(fn
+          {pos, %{"aid" => aid} = _pos_data} -> if aid == player.id, do: [pos], else: []
+          _ -> []
         end)
-        |> Enum.reject(&is_nil/1)
         |> Enum.random()
 
       :forward ->
         player.units
-        |> Enum.map(fn
-          {pos, %{"aid" => aid} = _pos_data} ->
-            if aid == player.id, do: pos, else: nil
-
-          _ ->
-            nil
+        |> Enum.flat_map(fn
+          {pos, %{"aid" => _aid} = _pos_data} -> [pos]
+          _ -> []
         end)
-        |> Enum.reject(&is_nil/1)
         |> Enum.random()
 
       _ ->

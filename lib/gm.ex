@@ -6,7 +6,7 @@ defmodule Gm do
   def gm(name_prefix, from_id, to_id, params) do
     Enum.each(from_id..to_id, fn this_id ->
       account = name_prefix <> "#{this_id}"
-      this_pid = Avatar.Ets.load_value(account)
+      this_pid = Avatar.Ets.load_value(account) |> Map.get(:pid)
       Router.route(this_pid, {:gm, params})
     end)
   end
@@ -25,7 +25,7 @@ defmodule Gm do
   def forward(name_prefix, from_id, to_id, x, y, troop_index) do
     Enum.each(from_id..to_id, fn this_id ->
       account = name_prefix <> "#{this_id}"
-      this_pid = Avatar.Ets.load_value(account)
+      this_pid = Avatar.Ets.load_value(account) |> Map.get(:pid)
       Router.route(this_pid, {:forward, x, y, troop_index})
     end)
   end
@@ -40,7 +40,7 @@ defmodule Gm do
   def attack(name_prefix, from_id, to_id, x, y, troop_index, times, is_back?) do
     Enum.each(from_id..to_id, fn this_id ->
       account = name_prefix <> "#{this_id}"
-      this_pid = Avatar.Ets.load_value(account)
+      this_pid = Avatar.Ets.load_value(account) |> Map.get(:pid)
       Router.route(this_pid, {:attack, x, y, troop_index, times, is_back?})
     end)
   end

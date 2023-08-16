@@ -12,10 +12,7 @@ defmodule Main do
     HttpService.start()
     init_ets()
     opts = [strategy: :one_for_one, name: WhynotBot.Supervisor]
-    re = Supervisor.start_link(children, opts)
-    :observer.start()
-    # StartPressure.go('192.168.1.129', 6666, "bot_1_", 1, 2, 1)
-    re
+    Supervisor.start_link(children, opts)
   end
 
   def init_ets() do

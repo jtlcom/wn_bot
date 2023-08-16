@@ -26,7 +26,7 @@ defmodule AvatarLoop do
   # 8. 装死15分钟
   # 9. 什么也不做
   # -----------------
-  def loop(player) do
+  def loop(%AvatarDef{conn: conn} = player) do
     cond do
       # city_warnning(player) ->
       #   {:ok, player}
@@ -39,27 +39,38 @@ defmodule AvatarLoop do
         rand = Enum.random(1..100)
 
         cond do
-          # rand <= 75 ->
-          #   troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.min()
-          #   pos = Avatar.analyze_verse(player, :forward)
-          #   Client.send_msg(player.conn, ["op", "forward", [troop_guid, pos]])
-          #   IO.puts("forward forward forward forward forward}")
-          #   IO.puts("troop_guid: #{inspect(troop_guid)}}")
-          #   IO.puts("pos: #{inspect(pos)}}")
-          #   {:ok, player}
+          rand <= 10 ->
+            troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.random()
+            pos = Avatar.analyze_verse(player, :forward)
 
-          # rand <= 95 ->
-          #   troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.min()
-          #   pos = Avatar.analyze_verse(player, :attack)
-          #   Client.send_msg(player.conn, ["op", "attack", [troop_guid, pos]])
-          #   IO.puts("atk atk atk atk atk}")
-          #   IO.puts("troop_guid: #{inspect(troop_guid)}}")
-          #   IO.puts("pos: #{inspect(pos)}}")
-          #   {:ok, player}
-
-          rand <= 100 ->
+            Client.send_msg(conn, ["troop_hero", "add_hero_hp", [troop_guid, [9999, 9999, 9999]]])
+            Client.send_msg(conn, ["op", "forward", [troop_guid, pos]])
             {:ok, player}
-            # {:sleep, 15}
+
+          rand <= 20 ->
+            troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.random()
+            pos = Avatar.analyze_verse(player, :attack)
+
+            Client.send_msg(conn, ["troop_hero", "add_hero_hp", [troop_guid, [9999, 9999, 9999]]])
+            Client.send_msg(conn, ["op", "attack", [troop_guid, pos, 1, false]])
+            {:ok, player}
+
+          rand <= 30 ->
+            troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.random()
+            pos = Avatar.analyze_verse(player, :attack)
+
+            Client.send_msg(conn, ["troop_hero", "add_hero_hp", [troop_guid, [9999, 9999, 9999]]])
+            Client.send_msg(conn, ["op", "attack", [troop_guid, pos, 1, true]])
+            {:ok, player}
+
+          rand <= 70 ->
+            msg = Enum.random(["test", "hah", "hola", "你好~"])
+            Client.send_msg(conn, ["chat:send", 1, 1, msg, "{}"])
+            {:ok, player}
+
+          true ->
+            Client.send_msg(conn, ["gacha:gacha", 1, 5])
+            {:ok, player}
         end
     end
   end

@@ -32,6 +32,7 @@ defmodule MsgCounter do
   end
 
   def get_onlines_count() do
+    # MsgCounter.get_onlines_count
     # Agent.get(__MODULE__, &(&1[:onlines_count] || 0))
     :ets.lookup(@ets_counter, :onlines_count) |> Keyword.get(:onlines_count)
   end
