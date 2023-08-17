@@ -7,7 +7,7 @@ defmodule PlugRouter do
   plug(:dispatch)
 
   get "/" do
-    data = "onlines_count: #{inspect MsgCounter.get_onlines_count}"
+    data = "onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
     send_resp(conn, 200, data)
   end
 
@@ -31,7 +31,7 @@ defmodule PlugRouter do
             "name_prefix" => name_prefix,
             "from" => from,
             "to" => to,
-            "born_state" => born_state
+            "AI" => ai
           } ->
             Http.Ets.insert(conn |> Map.get(:remote_ip), %{
               ip: '#{ip}',
@@ -39,7 +39,7 @@ defmodule PlugRouter do
               name_prefix: name_prefix,
               from: from,
               to: to,
-              born_state: born_state
+              AI: ai
             })
 
             send_resp(conn, 200, "ok")
@@ -54,10 +54,25 @@ defmodule PlugRouter do
   end
 
   post "/login" do
-    case Http.Ets.load_value(Map.get(conn, :remote_ip)) do
-      %{ip: ip, port: port, name_prefix: name_prefix, from: from, to: to, born_state: born_state} ->
-        HttpMgr.cast({:apply, StartPressure, :go, [ip, port, name_prefix, from, to, born_state]})
-        send_resp(conn, 200, "ok")
+    length =
+      conn.req_headers |> Map.new() |> Map.get("content-length", "0") |> String.to_integer()
+
+    case length > 0 && Plug.Conn.read_body(conn, length: length) do
+      {:ok, body, conn} ->
+        Logger.debug("/login body: #{inspect(body)}")
+
+        case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
+          {%{"born_state" => born_state},
+           %{ip: ip, port: port, name_prefix: name_prefix, from: from, to: to, AI: ai}} ->
+            HttpMgr.cast(
+              {:apply, StartPressure, :go, [ip, port, name_prefix, from, to, born_state, ai]}
+            )
+
+            send_resp(conn, 200, "ok")
+
+          _ ->
+            send_resp(conn, 200, "error")
+        end
 
       _ ->
         send_resp(conn, 200, "error")

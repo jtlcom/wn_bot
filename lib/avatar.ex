@@ -23,24 +23,6 @@ defmodule Avatar.Supervisor do
   end
 end
 
-defmodule AvatarDef do
-  defstruct id: 0,
-            account: "",
-            name: "",
-            conn: nil,
-            buildings: %{},
-            city_pos: nil,
-            gid: 0,
-            grids: %{},
-            grids_limit: 10,
-            heros: %{},
-            points: %{},
-            troops: %{},
-            units: %{},
-            fixed_units: %{},
-            dynamic_units: %{}
-end
-
 defmodule Avatar do
   use GenServer
   require Logger
@@ -52,7 +34,7 @@ defmodule Avatar do
     GenServer.start_link(__MODULE__, args, opts)
   end
 
-  def init({server_ip, server_port, name, born_state, token, login_with_data}) do
+  def init({server_ip, server_port, name, born_state, ai, token, login_with_data}) do
     # IO.inspect id
     start_time = Utils.timestamp(:ms)
     name = "#{name}"
@@ -78,7 +60,7 @@ defmodule Avatar do
 
     Upload.log("conn: #{inspect(conn)},   robot: #{name}, init used: #{end_time - start_time}")
 
-    {:ok, %AvatarDef{account: name, gid: born_state, conn: conn}}
+    {:ok, %AvatarDef{account: name, gid: born_state, conn: conn, AI: ai}}
   end
 
   # -------------------------------- handle_info ----------------------------------
@@ -172,14 +154,14 @@ defmodule Avatar do
     {:noreply, new_player}
   end
 
-  def handle_info({:loop}, %AvatarDef{conn: conn, city_pos: city_pos} = player) do
+  def handle_info({:loop}, %AvatarDef{conn: conn, city_pos: city_pos, AI: ai} = player) do
     now = System.system_time(:second)
     last_op_ts = Process.get(:last_op_ts, 0)
     delta_sec = trunc(now - last_op_ts)
     Process.send_after(self(), {:loop}, 1000)
 
     cond do
-      delta_sec >= 15 ->
+      ai and delta_sec >= 15 ->
         Process.put(:last_op_ts, now)
         Client.send_msg(conn, ["ping", 1])
         Client.send_msg(conn, ["see", city_pos, 10])

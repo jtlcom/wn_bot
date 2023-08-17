@@ -1,12 +1,12 @@
 defmodule StartPressure do
   require Logger
 
-  def go(server_ip, server_port, name_prefix, from, to, born_state) do
+  def go(server_ip, server_port, name_prefix, from, to, born_state, ai) do
     # StartPressure.go('192.168.1.129', 6666, "bot_1_", 1, 2, 1)
-    start_some(server_ip, server_port, name_prefix, from, to, born_state)
+    start_some(server_ip, server_port, name_prefix, from, to, born_state, ai)
   end
 
-  def start_single(server_ip, server_port, name_prefix, id, born_state) do
+  def start_single(server_ip, server_port, name_prefix, id, born_state, ai) do
     account = name_prefix <> "#{id}"
 
     case HTTPoison.post(
@@ -19,7 +19,7 @@ defmodule StartPressure do
         case Jason.decode!(body) do
           %{"login_with_data" => login_with_data, "token" => token} ->
             case Avatar.Supervisor.start_child(
-                   {server_ip, server_port, account, born_state, token, login_with_data},
+                   {server_ip, server_port, account, born_state, ai, token, login_with_data},
                    name: {:global, {:name, Guid.name(id)}}
                  ) do
               {:ok, pid} ->
@@ -38,7 +38,7 @@ defmodule StartPressure do
     end
   end
 
-  def start_some(server_ip, server_port, name_prefix, from_id, to_id, born_state) do
+  def start_some(server_ip, server_port, name_prefix, from_id, to_id, born_state, ai) do
     try_one =
       :gen_tcp.connect(server_ip, server_port, [
         :binary,
@@ -52,18 +52,18 @@ defmodule StartPressure do
     case try_one do
       {:ok, conn} ->
         :gen_tcp.close(conn)
-        strategy(:once_time, server_ip, server_port, name_prefix, from_id, to_id, born_state)
+        strategy(:once_time, server_ip, server_port, name_prefix, from_id, to_id, born_state, ai)
 
       _ ->
         Logger.info("cannot connect #{inspect(server_ip)}:#{inspect(server_port)}")
     end
   end
 
-  def strategy(:once_time, server_ip, server_port, name_prefix, from_id, to_id, born_state) do
+  def strategy(:once_time, server_ip, server_port, name_prefix, from_id, to_id, born_state, ai) do
     from_id..to_id
     |> Enum.each(fn this_id ->
       # Process.sleep(300)
-      start_single(server_ip, server_port, name_prefix, this_id, born_state)
+      start_single(server_ip, server_port, name_prefix, this_id, born_state, ai)
     end)
   end
 end
