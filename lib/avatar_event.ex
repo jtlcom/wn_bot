@@ -23,28 +23,28 @@ defmodule AvatarEvent do
   end
 
   def handle_event(["prop_changed", _id, changed], player) do
-    IO.puts("new prop_changed    !")
     player |> changed_update(changed)
   end
 
   def handle_event(["avatar_data", _id, changed], player) do
-    IO.puts("new prop_changed    !")
     player |> changed_update(changed)
   end
 
   def handle_event(["units", _, units_data], player) do
-    IO.puts("new units    !")
     player |> verse_update(:units, units_data)
   end
 
   def handle_event(["fixed_units", _, units_data], player) do
-    IO.puts("new fixed_units    !")
     player |> verse_update(:fixed_units, units_data)
   end
 
   def handle_event(["fixed_unit_changed", _, units_data], player) do
-    IO.puts("new fixed_unit_changed    !")
     player |> verse_update(:fixed_units, units_data)
+  end
+
+  def handle_event(["add_grid", _, grid_data, _ms_time], %AvatarDef{grids: grids} = player) do
+    new_grids = grids |> Map.merge(grid_data)
+    struct(player, %{grids: new_grids})
   end
 
   def handle_event(other, player) do
