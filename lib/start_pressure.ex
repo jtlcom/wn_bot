@@ -55,7 +55,7 @@ defmodule StartPressure do
         strategy(:once_time, server_ip, server_port, name_prefix, from_id, to_id, born_state, ai)
 
       _ ->
-        Logger.info("cannot connect #{inspect(server_ip)}:#{inspect(server_port)}")
+        Logger.warn("cannot connect #{inspect(server_ip)}:#{inspect(server_port)}")
     end
   end
 

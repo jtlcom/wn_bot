@@ -84,7 +84,7 @@ defmodule Avatar do
         %AvatarDef{id: id, account: account, gid: born_state, conn: conn} = player
       ) do
     decoded = SimpleMsgPack.unpack!(data)
-    Logger.info("recvd message------------------------------------------------:
+    Logger.debug("recvd message------------------------------------------------:
     \t\t avatar: \t #{id}
     \t\t account: \t #{account}
     \t\t from_ip: \t #{inspect(client_ip(socket))}

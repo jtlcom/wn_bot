@@ -12,8 +12,8 @@ defmodule PlugRouter do
   end
 
   get "/get_info" do
-    data = Http.Ets.load_value(Map.get(conn, :remote_ip))
-    send_resp(conn, 200, "#{inspect(data)}")
+    http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+    send_resp(conn, 200, "#{inspect(http_info)}")
   end
 
   post "/save_info" do
@@ -22,9 +22,10 @@ defmodule PlugRouter do
 
     case length > 0 && Plug.Conn.read_body(conn, length: length) do
       {:ok, body, conn} ->
-        Logger.debug("/save_info body: #{inspect(body)}")
+        body = Jason.decode!(body)
+        Logger.info("/save_info body: #{inspect(body, pretty: true)}")
 
-        case Jason.decode!(body) do
+        case body do
           %{
             "ip" => ip,
             "port" => port,
@@ -59,9 +60,11 @@ defmodule PlugRouter do
 
     case length > 0 && Plug.Conn.read_body(conn, length: length) do
       {:ok, body, conn} ->
-        Logger.debug("/login body: #{inspect(body)}")
+        body = Jason.decode!(body)
+        http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+        Logger.info("/login body: #{inspect(body, pretty: true)}, http_info: #{inspect http_info, pretty: true}")
 
-        case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
+        case {body, http_info} do
           {%{"born_state" => born_state},
            %{ip: ip, port: port, name_prefix: name_prefix, from: from, to: to, AI: ai}} ->
             HttpMgr.cast(
@@ -85,9 +88,11 @@ defmodule PlugRouter do
 
     case length > 0 && Plug.Conn.read_body(conn, length: length) do
       {:ok, body, conn} ->
-        Logger.debug("/gm body: #{inspect(body)}")
+        body = Jason.decode!(body)
+        http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+        Logger.debug("/gm body: #{inspect(body, pretty: true)}, http_info: #{inspect http_info, pretty: true}")
 
-        case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
+        case {body, http_info} do
           {%{"params" => params}, %{name_prefix: name_prefix, from: from, to: to}} ->
             Gm.gm(name_prefix, from, to, params)
             send_resp(conn, 200, "ok")
@@ -107,9 +112,11 @@ defmodule PlugRouter do
 
     case length > 0 && Plug.Conn.read_body(conn, length: length) do
       {:ok, body, conn} ->
-        Logger.debug("/forward body: #{inspect(body)}")
+        body = Jason.decode!(body)
+        http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+        Logger.debug("/forward body: #{inspect(body, pretty: true)}, http_info: #{inspect http_info, pretty: true}")
 
-        case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
+        case {body, http_info} do
           {%{"x" => to_x, "y" => to_y, "index" => troop_index},
            %{name_prefix: name_prefix, from: from, to: to}} ->
             Gm.forward(name_prefix, from, to, to_x, to_y, troop_index)
@@ -130,9 +137,11 @@ defmodule PlugRouter do
 
     case length > 0 && Plug.Conn.read_body(conn, length: length) do
       {:ok, body, conn} ->
-        Logger.debug("/attack body: #{inspect(body)}")
+        body = Jason.decode!(body)
+        http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+        Logger.debug("/attack body: #{inspect(body, pretty: true)}, http_info: #{inspect http_info, pretty: true}")
 
-        case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
+        case {body, http_info} do
           {%{
              "x" => to_x,
              "y" => to_y,
@@ -158,9 +167,11 @@ defmodule PlugRouter do
 
     case length > 0 && Plug.Conn.read_body(conn, length: length) do
       {:ok, body, conn} ->
-        Logger.debug("/stop body: #{inspect(body)}")
+        body = Jason.decode!(body)
+        http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+        Logger.debug("/stop body: #{inspect(body, pretty: true)}, http_info: #{inspect http_info, pretty: true}")
 
-        case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
+        case {body, http_info} do
           {%{"index" => 0}, %{name_prefix: name_prefix, from: from, to: to}} ->
             Enum.each(1..5, fn this_index ->
               Enum.each(from..to, fn this_id ->
@@ -198,9 +209,11 @@ defmodule PlugRouter do
 
     case length > 0 && Plug.Conn.read_body(conn, length: length) do
       {:ok, body, conn} ->
-        Logger.debug("/defend body: #{inspect(body)}")
+        body = Jason.decode!(body)
+        http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+        Logger.debug("/defend body: #{inspect(body, pretty: true)}, http_info: #{inspect http_info, pretty: true}")
 
-        case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
+        case {body, http_info} do
           {%{"x" => to_x, "y" => to_y, "index" => 0},
            %{name_prefix: name_prefix, from: from, to: to}} ->
             Enum.each(1..5, fn this_index ->
@@ -240,9 +253,11 @@ defmodule PlugRouter do
 
     case length > 0 && Plug.Conn.read_body(conn, length: length) do
       {:ok, body, conn} ->
-        Logger.debug("/back body: #{inspect(body)}")
+        body = Jason.decode!(body)
+        http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+        Logger.debug("/back body: #{inspect(body, pretty: true)}, http_info: #{inspect http_info, pretty: true}")
 
-        case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
+        case {body, http_info} do
           {%{"index" => 0}, %{name_prefix: name_prefix, from: from, to: to}} ->
             Enum.each(1..5, fn this_index ->
               Enum.each(from..to, fn this_id ->
@@ -280,9 +295,11 @@ defmodule PlugRouter do
 
     case length > 0 && Plug.Conn.read_body(conn, length: length) do
       {:ok, body, conn} ->
-        Logger.debug("/apply body: #{inspect(body)}")
+        body = Jason.decode!(body)
+        http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+        Logger.debug("/apply body: #{inspect(body, pretty: true)}, http_info: #{inspect http_info, pretty: true}")
 
-        case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
+        case {body, http_info} do
           {%{"type" => type, "params" => params}, %{name_prefix: name_prefix, from: from, to: to}} ->
             Enum.each(from..to, fn this_id ->
               account = name_prefix <> "#{this_id}"
@@ -307,9 +324,11 @@ defmodule PlugRouter do
 
     case length > 0 && Plug.Conn.read_body(conn, length: length) do
       {:ok, body, conn} ->
-        Logger.debug("/multi_move_city body: #{inspect(body)}")
+        body = Jason.decode!(body)
+        http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+        Logger.debug("/multi_move_city body: #{inspect(body, pretty: true)}, http_info: #{inspect http_info, pretty: true}")
 
-        case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
+        case {body, http_info} do
           {%{"x" => to_x, "y" => to_y, "distance" => distance},
            %{ip: ip, name_prefix: name_prefix, from: from, to: to}} ->
             IO.puts("111")
@@ -372,9 +391,11 @@ defmodule PlugRouter do
 
     case length > 0 && Plug.Conn.read_body(conn, length: length) do
       {:ok, body, conn} ->
-        Logger.debug("/build body: #{inspect(body)}")
+        body = Jason.decode!(body)
+        http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+        Logger.debug("/build body: #{inspect(body, pretty: true)}, http_info: #{inspect http_info, pretty: true}")
 
-        case {Jason.decode!(body), Http.Ets.load_value(Map.get(conn, :remote_ip))} do
+        case {body, http_info} do
           {%{"id" => build_id}, %{name_prefix: name_prefix, from: from, to: to}} ->
             Enum.each(from..to, fn this_id ->
               account = name_prefix <> "#{this_id}"

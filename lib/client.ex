@@ -17,14 +17,14 @@ defmodule Client do
 
     case res do
       {:error, :timeout} ->
-        Logger.info("tcp send timeout")
+        Logger.error("tcp send timeout")
 
       {:error, send_error} ->
-        Logger.info("send error is #{inspect(send_error)}")
+        Logger.error("send error is #{inspect(send_error)}")
 
       _ ->
         aid = Process.get(:svr_aid, 0)
-        Logger.info("send message------------------------------------------------:
+        Logger.debug("send message------------------------------------------------:
         \t\t avatar: \t #{aid}
         \t\t time: \t #{inspect(:calendar.local_time())}
         \t\t msg: \t #{inspect(msg, pretty: true, limit: :infinity)}
