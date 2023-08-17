@@ -13,15 +13,6 @@ config :whynot_bot, http_port: 9999
 
 config :whynot_bot, recv_buff: 10
 
-config :whynot_bot,
-  wetest_api: %{
-    apiurl: "http://api.wetest.qq.com",
-    secretid: "W0NRWmZBY1dC3rSm",
-    secretkey: "PPif6drSzHqsVWS4",
-    projectid: "b30a017fb2cb54ce762fc54ab83cd903",
-    zoneid: 0
-  }
-
 config :logger, handle_otp_reports: true, handle_sasl_reports: true
 config :logger, backends: [:console, {LoggerFileBackend, :log_file}]
 
