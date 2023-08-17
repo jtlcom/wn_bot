@@ -134,7 +134,7 @@ defmodule Avatar do
               Process.put(:svr_aid, new_player.id)
               Avatar.Ets.insert(account, %{pid: self(), aid: new_player.id})
               MsgCounter.res_onlines_add()
-              Process.send_after(self(), {:loop}, 1000)
+              Process.send_after(self(), {:loop}, 5000)
 
               if Process.get(:new) do
                 Client.send_msg(conn, ["gm", "god"])
@@ -158,12 +158,12 @@ defmodule Avatar do
     now = System.system_time(:second)
     last_op_ts = Process.get(:last_op_ts, 0)
     delta_sec = trunc(now - last_op_ts)
-    Process.send_after(self(), {:loop}, 1000)
+    Process.send_after(self(), {:loop}, 5000)
+    Client.send_msg(conn, ["ping", 1])
 
     cond do
       ai and delta_sec >= 15 ->
         Process.put(:last_op_ts, now)
-        Client.send_msg(conn, ["ping", 1])
         Client.send_msg(conn, ["see", city_pos, 10])
 
         new_player =
