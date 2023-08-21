@@ -41,26 +41,59 @@ defmodule AvatarLoop do
         cond do
           rand <= 10 ->
             troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.random()
-            pos = Avatar.analyze_verse(player, :forward)
 
-            Client.send_msg(conn, ["troop_hero", "add_hero_hp", [troop_guid, [9999, 9999, 9999]]])
-            Client.send_msg(conn, ["op", "forward", [troop_guid, pos]])
+            case Avatar.analyze_verse(player, :forward) do
+              [_x, _y] = pos ->
+                Client.send_msg(conn, [
+                  "troop_hero",
+                  "add_hero_hp",
+                  [troop_guid, [9999, 9999, 9999]]
+                ])
+
+                Client.send_msg(conn, ["op", "forward", [troop_guid, pos]])
+
+              _ ->
+                nil
+            end
+
             {:ok, player}
 
           rand <= 20 ->
             troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.random()
-            pos = Avatar.analyze_verse(player, :attack)
 
-            Client.send_msg(conn, ["troop_hero", "add_hero_hp", [troop_guid, [9999, 9999, 9999]]])
-            Client.send_msg(conn, ["op", "attack", [troop_guid, pos, 1, false]])
+            case Avatar.analyze_verse(player, :attack) do
+              [_x, _y] = pos ->
+                Client.send_msg(conn, [
+                  "troop_hero",
+                  "add_hero_hp",
+                  [troop_guid, [9999, 9999, 9999]]
+                ])
+
+                Client.send_msg(conn, ["op", "attack", [troop_guid, pos, 1, false]])
+
+              _ ->
+                nil
+            end
+
             {:ok, player}
 
           rand <= 30 ->
             troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.random()
-            pos = Avatar.analyze_verse(player, :attack)
 
-            Client.send_msg(conn, ["troop_hero", "add_hero_hp", [troop_guid, [9999, 9999, 9999]]])
-            Client.send_msg(conn, ["op", "attack", [troop_guid, pos, 1, true]])
+            case Avatar.analyze_verse(player, :attack) do
+              [_x, _y] = pos ->
+                Client.send_msg(conn, [
+                  "troop_hero",
+                  "add_hero_hp",
+                  [troop_guid, [9999, 9999, 9999]]
+                ])
+
+                Client.send_msg(conn, ["op", "attack", [troop_guid, pos, 1, true]])
+
+              _ ->
+                nil
+            end
+
             {:ok, player}
 
           rand <= 70 ->

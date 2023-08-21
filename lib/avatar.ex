@@ -56,8 +56,6 @@ defmodule Avatar do
     Client.send_msg(conn, ["login", name, token, login_with_data, false])
 
     end_time = Utils.timestamp(:ms)
-    IO.inspect(end_time - start_time)
-
     Upload.log("conn: #{inspect(conn)},   robot: #{name}, init used: #{end_time - start_time}")
 
     {:ok, %AvatarDef{account: name, gid: born_state, conn: conn, AI: ai}}
@@ -135,12 +133,6 @@ defmodule Avatar do
               Avatar.Ets.insert(account, %{pid: self(), aid: new_player.id})
               MsgCounter.res_onlines_add()
               Process.send_after(self(), {:loop}, 5000)
-
-              if Process.get(:new) do
-                Client.send_msg(conn, ["gm", "god"])
-                Client.send_msg(conn, ["gm", "init_bot"])
-              end
-
               new_player
 
             _ ->
@@ -162,21 +154,20 @@ defmodule Avatar do
     Client.send_msg(conn, ["ping", 1])
 
     cond do
+      Process.get(:new, false) ->
+        Process.put(:new, false)
+        Client.send_msg(conn, ["gm", "god"])
+        Client.send_msg(conn, ["gm", "init_bot"])
+        {:noreply, player}
+
       ai and delta_sec >= 15 ->
         Process.put(:last_op_ts, now)
         Client.send_msg(conn, ["see", city_pos, 10])
 
         new_player =
           case AvatarLoop.loop(player) do
-            {:ok, new_player} ->
-              new_player
-
-            # {:sleep, min} ->
-            #   :erlang.send_after(min * 60 * 1_000, self(), {:loop})
-            #   player
-
-            _ ->
-              player
+            {:ok, new_player} -> new_player
+            _ -> player
           end
 
         {:noreply, new_player}
@@ -406,26 +397,30 @@ defmodule Avatar do
     })
   end
 
-  def analyze_verse(player, type) do
-    case type do
+  def analyze_verse(%AvatarDef{units: units} = player, type) do
+    case map_size(units) > 0 and type do
       :attack ->
-        player.units
-        |> Enum.flat_map(fn
-          {pos, %{"aid" => aid} = _pos_data} -> if aid == player.id, do: [pos], else: []
-          _ -> []
-        end)
-        |> Enum.random()
+        total_pos =
+          units
+          |> Enum.flat_map(fn
+            {pos, %{"aid" => aid} = _pos_data} -> if aid == player.id, do: [pos], else: []
+            _ -> []
+          end)
+
+        if length(total_pos) > 0, do: Enum.random(total_pos), else: nil
 
       :forward ->
-        player.units
-        |> Enum.flat_map(fn
-          {pos, %{"aid" => _aid} = _pos_data} -> [pos]
-          _ -> []
-        end)
-        |> Enum.random()
+        total_pos =
+          units
+          |> Enum.flat_map(fn
+            {pos, %{"aid" => _aid} = _pos_data} -> [pos]
+            _ -> []
+          end)
+
+        if length(total_pos) > 0, do: Enum.random(total_pos), else: nil
 
       _ ->
-        :ok
+        nil
     end
   end
 

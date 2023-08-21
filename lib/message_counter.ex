@@ -9,6 +9,7 @@ defmodule MsgCounter do
   def init() do
     :ets.new(@ets_counter, [:set, :public, :named_table])
     :ets.insert(@ets_counter, {:onlines_count, 0})
+    :ets.insert(@ets_counter, {:dead_count, 0})
   end
 
   # def count(type, tag, cat, size) do
@@ -29,12 +30,17 @@ defmodule MsgCounter do
   def res_onlines_sub() do
     # Agent.cast(__MODULE__, fn counter -> counter |> Map.update(:onlines_count, 0, &((&1 > 0) && (&1 - 1) || 0)) end)
     :ets.update_counter(@ets_counter, :onlines_count, -1)
+    :ets.update_counter(@ets_counter, :dead_count, 1)
   end
 
   def get_onlines_count() do
     # MsgCounter.get_onlines_count
     # Agent.get(__MODULE__, &(&1[:onlines_count] || 0))
     :ets.lookup(@ets_counter, :onlines_count) |> Keyword.get(:onlines_count)
+  end
+
+  def get_dead_count() do
+    :ets.lookup(@ets_counter, :dead_count) |> Keyword.get(:dead_count)
   end
 
   # def report() do
