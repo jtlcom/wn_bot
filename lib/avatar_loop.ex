@@ -44,11 +44,7 @@ defmodule AvatarLoop do
 
             case Avatar.analyze_verse(player, :forward) do
               [_x, _y] = pos ->
-                Client.send_msg(conn, [
-                  "troop_hero",
-                  "add_hero_hp",
-                  [troop_guid, [9999, 9999, 9999]]
-                ])
+                Client.send_msg(conn, ["troop_hero:add_hero_hp", [troop_guid, [9999, 9999, 9999]]])
 
                 Client.send_msg(conn, ["op", "forward", [troop_guid, pos]])
 
@@ -63,11 +59,7 @@ defmodule AvatarLoop do
 
             case Avatar.analyze_verse(player, :attack) do
               [_x, _y] = pos ->
-                Client.send_msg(conn, [
-                  "troop_hero",
-                  "add_hero_hp",
-                  [troop_guid, [9999, 9999, 9999]]
-                ])
+                Client.send_msg(conn, ["troop_hero:add_hero_hp", [troop_guid, [9999, 9999, 9999]]])
 
                 Client.send_msg(conn, ["op", "attack", [troop_guid, pos, 1, false]])
 
@@ -82,11 +74,7 @@ defmodule AvatarLoop do
 
             case Avatar.analyze_verse(player, :attack) do
               [_x, _y] = pos ->
-                Client.send_msg(conn, [
-                  "troop_hero",
-                  "add_hero_hp",
-                  [troop_guid, [9999, 9999, 9999]]
-                ])
+                Client.send_msg(conn, ["troop_hero:add_hero_hp", [troop_guid, [9999, 9999, 9999]]])
 
                 Client.send_msg(conn, ["op", "attack", [troop_guid, pos, 1, true]])
 
