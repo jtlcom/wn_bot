@@ -31,14 +31,16 @@ dead_count: #{inspect(MsgCounter.get_dead_count())}"
           %{
             "ip" => ip,
             "port" => port,
+            "realm_http_port" => realm_http_port,
             "name_prefix" => name_prefix,
             "from" => from,
             "to" => to,
             "AI" => ai
           } ->
             Http.Ets.insert(conn |> Map.get(:remote_ip), %{
-              ip: '#{ip}',
+              ip: ~c"#{ip}",
               port: port,
+              realm_http_port: realm_http_port,
               name_prefix: name_prefix,
               from: from,
               to: to,
@@ -359,7 +361,13 @@ dead_count: #{inspect(MsgCounter.get_dead_count())}"
 
         case {body, http_info} do
           {%{"x" => to_x, "y" => to_y, "distance" => distance},
-           %{ip: ip, name_prefix: name_prefix, from: from, to: to}} ->
+           %{
+             ip: ip,
+             realm_http_port: realm_http_port,
+             name_prefix: name_prefix,
+             from: from,
+             to: to
+           }} ->
             total_aid_list =
               Enum.flat_map(from..to, fn
                 this_id ->
@@ -367,7 +375,7 @@ dead_count: #{inspect(MsgCounter.get_dead_count())}"
                   List.wrap(Avatar.Ets.load_value(account) |> Map.get(:aid))
               end)
 
-            url = "#{ip}:#{20003}/get_move_city_pos"
+            url = "#{ip}:#{realm_http_port}/get_move_city_pos"
             header = [{"Content-Type", "application/json"}]
 
             data = %{

@@ -53,7 +53,7 @@ defmodule Avatar do
         nodelay: true
       ])
 
-    Client.send_msg(conn, ["login", name, token, login_with_data, false])
+    Client.send_msg(conn, ["login", name, 0, token, login_with_data, false])
 
     end_time = Utils.timestamp(:ms)
     Upload.log("conn: #{inspect(conn)},   robot: #{name}, init used: #{end_time - start_time}")

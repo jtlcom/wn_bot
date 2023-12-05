@@ -19,7 +19,7 @@ defmodule StartPressure do
         case Jason.decode!(body) do
           %{"login_with_data" => login_with_data, "token" => token} ->
             case Avatar.Supervisor.start_child(
-                   {server_ip, server_port, account, born_state, ai, token, login_with_data},
+                   {server_ip, server_port, account, born_state, ai, token, Jason.encode!(login_with_data)},
                    name: {:global, {:name, Guid.name(id)}}
                  ) do
               {:ok, pid} ->
