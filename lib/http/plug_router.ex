@@ -177,6 +177,38 @@ dead_count: #{inspect(MsgCounter.get_dead_count())}"
     end
   end
 
+  post "/summon" do
+    length =
+      conn.req_headers |> Map.new() |> Map.get("content-length", "0") |> String.to_integer()
+
+    case length > 0 && Plug.Conn.read_body(conn, length: length) do
+      {:ok, body, conn} ->
+        body = Jason.decode!(body)
+        http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+
+        Logger.debug(
+          "/summon body: #{inspect(body, pretty: true)}, http_info: #{inspect(http_info, pretty: true)}"
+        )
+
+        case {body, http_info} do
+          {%{
+             "x" => to_x,
+             "y" => to_y,
+             "is_main_team" => is_main_team,
+             "index" => troop_index
+           }, %{name_prefix: name_prefix, from: from, to: to}} ->
+            Gm.summon(name_prefix, from, to, to_x, to_y, troop_index, is_main_team)
+            send_resp(conn, 200, "ok")
+
+          _ ->
+            send_resp(conn, 200, "error")
+        end
+
+      _ ->
+        send_resp(conn, 200, "error")
+    end
+  end
+
   post "/stop" do
     length =
       conn.req_headers |> Map.new() |> Map.get("content-length", "0") |> String.to_integer()

@@ -237,6 +237,16 @@ defmodule Avatar do
     {:noreply, player}
   end
 
+  def handle_cast({:summon, x, y, troop_index, is_main_team}, player) do
+    troop_guid =
+      player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.sort() |> Enum.at(troop_index - 1)
+
+    pos = [x, y]
+    Client.send_msg(player.conn, ["op", "join_summon", [troop_guid, pos, is_main_team]])
+    IO.puts("troop_guid: #{inspect(troop_guid)}}")
+    {:noreply, player}
+  end
+
   def handle_cast({:stop, troop_index}, player) do
     troop_guid =
       player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.sort() |> Enum.at(troop_index - 1)

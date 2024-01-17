@@ -45,6 +45,13 @@ defmodule Gm do
     end)
   end
 
+  def summon(name_prefix, from_id, to_id, x, y, 0, is_main_team) do
+    Enum.each(1..5, fn this_index ->
+      summon(name_prefix, from_id, to_id, x, y, this_index, is_main_team)
+      Process.sleep(1500)
+    end)
+  end
+
   def gacha(num) do
     Realm.broadcast({:gacha, num})
   end
