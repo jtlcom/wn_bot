@@ -34,31 +34,10 @@ defmodule Avatar do
     GenServer.start_link(__MODULE__, args, opts)
   end
 
-  def init({server_ip, server_port, name, born_state, ai, token, login_with_data}) do
-    # IO.inspect id
-    start_time = Utils.timestamp(:ms)
-    name = "#{name}"
-    Guid.register(self(), name)
-    Process.put(:avatar_id, name)
-    Process.put(:avatar_name, name)
-    Process.put(:last_op_ts, System.system_time(:second))
-
-    {:ok, conn} =
-      :gen_tcp.connect(server_ip, server_port, [
-        :binary,
-        packet: packet(),
-        active: true,
-        recbuf: 1024 * 1024 * Application.get_env(:whynot_bot, :recv_buff, 20),
-        keepalive: true,
-        nodelay: true
-      ])
-
-    Client.send_msg(conn, ["login", name, 0, token, login_with_data, false])
-
-    end_time = Utils.timestamp(:ms)
-    Upload.log("conn: #{inspect(conn)},   robot: #{name}, init used: #{end_time - start_time}")
-
-    {:ok, %AvatarDef{account: name, gid: born_state, conn: conn, AI: ai}}
+  def init({server_ip, server_port, name, born_state, ai}) do
+    Logger.info("name: #{inspect(name)}, ip: #{inspect(server_ip)}, pt: #{inspect(server_port)}")
+    Router.cast(self(), {:login, {server_ip, server_port, name, born_state, ai}})
+    {:ok, %{name: name, born_state: born_state}}
   end
 
   # -------------------------------- handle_info ----------------------------------

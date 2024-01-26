@@ -72,11 +72,8 @@ dead_count: #{inspect(MsgCounter.get_dead_count())}"
         )
 
         case {body, http_info} do
-          {%{"born_state" => born_state},
-           %{ip: ip, port: port, name_prefix: name_prefix, from: from, to: to, AI: ai}} ->
-            HttpMgr.cast(
-              {:apply, StartPressure, :go, [ip, port, name_prefix, from, to, born_state, ai]}
-            )
+          {%{}, %{ip: ip, port: port, name_prefix: name_prefix, from: from, to: to, AI: ai}} ->
+            HttpMgr.cast({:apply, StartPressure, :go, [ip, port, name_prefix, from, to, ai]})
 
             send_resp(conn, 200, "ok")
 

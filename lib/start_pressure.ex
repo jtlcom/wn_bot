@@ -1,7 +1,7 @@
 defmodule StartPressure do
   require Logger
   # StartPressure.go('192.168.1.129', 6666, "bot_1_", 1, 2, 1)
-  def go(server_ip, server_port, name_prefix, from_id, to_id, born_state, ai) do
+  def go(server_ip, server_port, name_prefix, from_id, to_id, ai) do
     try_one =
       :gen_tcp.connect(server_ip, server_port, [
         :binary,
@@ -15,51 +15,40 @@ defmodule StartPressure do
     case try_one do
       {:ok, conn} ->
         :gen_tcp.close(conn)
-        strategy(:once_time, server_ip, server_port, name_prefix, from_id, to_id, born_state, ai)
+        strategy(:once_time, server_ip, server_port, name_prefix, from_id, to_id, ai)
 
       _ ->
         Logger.warning("cannot connect #{inspect(server_ip)}:#{inspect(server_port)}")
     end
   end
 
-  def strategy(:once_time, server_ip, server_port, name_prefix, from_id, to_id, born_state, ai) do
+  def strategy(:once_time, server_ip, server_port, name_prefix, from_id, to_id, ai) do
     from_id..to_id
-    |> Enum.each(fn this_id ->
-      # Process.sleep(300)
-      start_single(server_ip, server_port, name_prefix, this_id, born_state, ai)
+    |> Enum.to_list()
+    |> Enum.chunk_every(100)
+    |> Enum.each(fn this_list ->
+      this_list
+      |> Enum.each(fn this_id ->
+        # Process.sleep(300)
+        start_single(server_ip, server_port, name_prefix, this_id, ai)
+      end)
+
+      Process.sleep(1000)
     end)
   end
 
-  def start_single(server_ip, server_port, name_prefix, id, born_state, ai) do
+  def start_single(server_ip, server_port, name_prefix, id, ai) do
     account = name_prefix <> "#{id}"
 
-    case HTTPoison.post(
-           "http://192.168.1.92:8080/auth/whynot",
-           %{"account" => account, "password" => "111111"} |> URI.encode_query(),
-           [{"Content-Type", "application/x-www-form-urlencoded"}],
-           timeout: 5000
-         ) do
-      {:ok, %{body: body}} ->
-        case Jason.decode!(body) do
-          %{"login_with_data" => login_with_data, "token" => token} ->
-            case Avatar.Supervisor.start_child(
-                   {server_ip, server_port, account, born_state, ai, token,
-                    Jason.encode!(login_with_data)},
-                   name: {:global, {:name, Guid.name(id)}}
-                 ) do
-              {:ok, pid} ->
-                pid
+    start_time = Utils.timestamp(:ms)
+    gid = div(id, 1000) |> rem(3) |> Kernel.+(1)
 
-              _ ->
-                nil
-            end
+    Avatar.Supervisor.start_child(
+      {server_ip, server_port, account, gid, ai},
+      name: {:global, {:name, Guid.name(account)}}
+    )
 
-          _ ->
-            :error
-        end
-
-      {:error, _error} ->
-        :error
-    end
+    end_time = Utils.timestamp(:ms)
+    Logger.info("login account: #{inspect(account)}, login_used: #{end_time - start_time}")
   end
 end
