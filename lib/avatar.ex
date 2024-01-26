@@ -291,6 +291,12 @@ defmodule Avatar do
     end
   end
 
+  def handle_cast({:faction_arena_battle, index}, player) do
+    index = (index == 0 && Enum.random(1..10)) || index
+    Client.send_msg(player.conn, ["faction_arena", "battle", index, 0])
+    {:noreply, player}
+  end
+
   def handle_cast({:gm, params}, player) do
     IO.puts("#{player.account}: params: #{inspect(params)}}")
     Client.send_msg(player.conn, ["gm"] ++ params)
