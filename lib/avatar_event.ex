@@ -47,6 +47,22 @@ defmodule AvatarEvent do
     struct(player, %{grids: new_grids})
   end
 
+  def handle_event(
+        ["mail:list", _, %{"system" => new_mails}],
+        %AvatarDef{system_mails: prev_sys_mails} = player
+      ) do
+    new_sys_mails =
+      Enum.reduce(new_mails, prev_sys_mails, fn
+        %{"id" => mail_id, "got" => false} = this_mail, acc ->
+          acc |> Map.put(mail_id, this_mail)
+
+        _, acc ->
+          acc
+      end)
+
+    struct(player, %{system_mails: new_sys_mails})
+  end
+
   def handle_event(other, player) do
     case other do
       [head | _] ->

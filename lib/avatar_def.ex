@@ -19,5 +19,7 @@ defmodule AvatarDef do
             units: %{},
             fixed_units: %{},
             dynamic_units: %{},
-            AI: false
+            AI: false,
+            system_mails: %{},
+            group_mails: %{}
 end
