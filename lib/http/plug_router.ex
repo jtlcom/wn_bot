@@ -86,6 +86,38 @@ dead_count: #{inspect(MsgCounter.get_dead_count())}"
     end
   end
 
+  post "/logout" do
+    length =
+      conn.req_headers |> Map.new() |> Map.get("content-length", "0") |> String.to_integer()
+
+    case length > 0 && Plug.Conn.read_body(conn, length: length) do
+      {:ok, body, conn} ->
+        body = Jason.decode!(body)
+        http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+
+        Logger.info(
+          "/logout body: #{inspect(body, pretty: true)}, http_info: #{inspect(http_info, pretty: true)}"
+        )
+
+        case {body, http_info} do
+          {%{}, %{name_prefix: name_prefix, from: from, to: to}} ->
+            Enum.each(from..to, fn this_id ->
+              account = name_prefix <> "#{this_id}"
+              this_pid = Avatar.Ets.load_value(account) |> Map.get(:pid)
+              Router.route(this_pid, {:logout})
+            end)
+
+            send_resp(conn, 200, "ok")
+
+          _ ->
+            send_resp(conn, 200, "error")
+        end
+
+      _ ->
+        send_resp(conn, 200, "error")
+    end
+  end
+
   post "/gm" do
     length =
       conn.req_headers |> Map.new() |> Map.get("content-length", "0") |> String.to_integer()

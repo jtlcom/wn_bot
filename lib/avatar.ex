@@ -313,6 +313,10 @@ defmodule Avatar do
     {:noreply, player}
   end
 
+  def handle_cast({:logout}, player) do
+    {:stop, :normal, player}
+  end
+
   def handle_cast({:atk}, player) do
     troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.min()
     pos = analyze_verse(player, :attack)
