@@ -47,6 +47,25 @@ defmodule AvatarEvent do
     struct(player, %{grids: new_grids})
   end
 
+  def handle_event(["hero_changed", _, hero_data], %AvatarDef{heros: heros} = player) do
+    new_heros =
+      Enum.reduce(hero_data, heros, fn
+        {hero_guid, new_data}, acc ->
+          case Map.get(heros, hero_guid) do
+            %{} = prev_hero ->
+              acc |> Map.put(hero_guid, Map.merge(prev_hero, new_data))
+
+            _ ->
+              acc
+          end
+
+        _, acc ->
+          acc
+      end)
+
+    struct(player, %{heros: new_heros})
+  end
+
   def handle_event(
         ["mail:list", _, %{"system" => new_mails}],
         %AvatarDef{system_mails: prev_sys_mails} = player
