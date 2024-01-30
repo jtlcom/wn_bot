@@ -174,12 +174,12 @@ defmodule Avatar do
 
                 _ ->
                   new_ref = Process.send_after(self(), :loop, 5000)
-                  struct(player, %{loop_ref: new_ref})
+                  struct(player, %{AI: true, loop_ref: new_ref})
               end
 
             _ ->
               new_ref = Process.send_after(self(), :loop, 5000)
-              struct(player, %{loop_ref: new_ref})
+              struct(player, %{AI: true, loop_ref: new_ref})
           end
 
         ai and trunc(Utils.timestamp() - last_ts) >= 5 ->
