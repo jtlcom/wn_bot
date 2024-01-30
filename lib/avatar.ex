@@ -34,31 +34,158 @@ defmodule Avatar do
     GenServer.start_link(__MODULE__, args, opts)
   end
 
-  def init({server_ip, server_port, name, born_state, ai}) do
-    Logger.info("name: #{inspect(name)}, ip: #{inspect(server_ip)}, pt: #{inspect(server_port)}")
-    Router.cast(self(), {:login, {server_ip, server_port, name, born_state, ai}})
-    {:ok, %{name: name, born_state: born_state}}
+  def init({server_ip, server_port, name, gid, ai}) do
+    Logger.info(
+      "account: #{inspect(name)}, ip: #{inspect(server_ip)}, pt: #{inspect(server_port)}"
+    )
+
+    Process.send_after(self(), :login, 1000)
+
+    {:ok,
+     %AvatarDef{
+       account: name,
+       gid: gid,
+       server_ip: server_ip,
+       server_port: server_port,
+       AI: ai
+     }}
   end
 
   # -------------------------------- handle_info ----------------------------------
-  def handle_info({:tcp_closed, _socket}, player) do
-    Logger.info("tcp closed!")
-    {:stop, {:shutdown, :tcp_closed}, player}
+  def handle_info(
+        :login,
+        %AvatarDef{
+          account: name,
+          server_ip: server_ip,
+          server_port: server_port
+        } = player
+      ) do
+    begin_time = Utils.timestamp(:ms)
+
+    case Client.login_post(server_ip, name) do
+      {:ok, %{body: body}} ->
+        case Jason.decode!(body) do
+          %{"login_with_data" => login_with_data, "token" => token} ->
+            claim = Jason.encode!(login_with_data)
+            start_time = Utils.timestamp(:ms)
+            name = "#{name}"
+            Guid.register(self(), name)
+            Process.put(:account, name)
+            Process.put(:last_op_ts, Utils.timestamp())
+
+            case Client.tcp_connect(server_ip, server_port) do
+              {:ok, conn} ->
+                Client.send_msg(conn, ["login", name, 0, token, claim, false])
+                end_time = Utils.timestamp(:ms)
+
+                Logger.info("log conn: #{inspect(conn)},   robot: #{name},
+        total used: #{end_time - begin_time},
+        login: #{start_time - begin_time},
+        connect: #{end_time - start_time}")
+
+                Count.Ets.insert(name, %{
+                  total: end_time - begin_time,
+                  login: start_time - begin_time,
+                  connect: end_time - start_time
+                })
+
+                {:ok, struct(player, %{conn: conn, token: token, claim: claim})}
+
+              _ ->
+                :error3
+            end
+
+          _ ->
+            :error2
+        end
+
+      {:error, _error} ->
+        :error1
+    end
+    |> case do
+      {:ok, new_player} ->
+        {:noreply, new_player}
+
+      error ->
+        Logger.warning("avatar login failed, error:#{error}, state:#{inspect(player)}")
+        Process.send_after(self(), :login, 1000)
+        {:noreply, player}
+    end
   end
 
-  def handle_info({:tcp_error, _, reason}, player) do
-    Logger.info("tcp error!")
-    {:stop, {:shutdown, {:tcp_error, reason}}, player}
-  end
+  def handle_info(
+        :loop,
+        %AvatarDef{
+          id: aid,
+          conn: conn,
+          city_pos: city_pos,
+          AI: ai,
+          account: name,
+          server_ip: server_ip,
+          server_port: server_port,
+          token: token,
+          claim: claim
+        } = player
+      ) do
+    last_ts = Process.get(:last_op_ts, 0)
+    # Client.send_msg(conn, ["ping", 1])
 
-  def handle_info(:timeout, player) do
-    Logger.info("conn time out!")
-    {:stop, {:shutdown, :tcp_timeout}, player}
+    new_player =
+      cond do
+        Process.get(:loop_close, false) ->
+          Client.tcp_close(conn)
+
+          case Client.tcp_connect(server_ip, server_port) do
+            {:ok, conn} ->
+              Client.send_msg(conn, ["login", name, aid, token, claim, true])
+              now = Utils.timestamp()
+              Process.put(:last_op_ts, now)
+              new_ref = Process.send_after(self(), :loop, 1000)
+              struct(player, %{conn: conn, loop_ref: new_ref})
+
+            _ ->
+              Logger.warning("tcp_connect failed")
+              new_ref = Process.send_after(self(), :loop, 1000)
+              struct(player, %{loop_ref: new_ref})
+          end
+
+        Process.get(:new, false) ->
+          Process.put(:new, false)
+          Client.send_msg(conn, ["gm", "god"])
+          Process.sleep(500)
+          Client.send_msg(conn, ["gm", "init_bot"])
+          Process.sleep(500)
+          Client.send_msg(conn, ["gm", "god_func"])
+          player
+
+        ai and trunc(Utils.timestamp() - last_ts) >= 5 ->
+          Client.send_msg(conn, ["see", city_pos, 2, 14])
+          Process.sleep(500)
+          Client.send_msg(conn, ["see", city_pos, 1, 8])
+          Process.sleep(500)
+
+          new_player =
+            case AvatarLoop.loop(player) do
+              {:ok, new_player} -> new_player
+              _ -> player
+            end
+
+          now = Utils.timestamp()
+          Process.put(:last_op_ts, now)
+          new_ref = Process.send_after(self(), :loop, 5000)
+          struct(new_player, %{loop_ref: new_ref})
+
+        true ->
+          new_ref = Process.send_after(self(), :loop, 5000)
+          struct(player, %{loop_ref: new_ref})
+      end
+
+    {:noreply, new_player}
   end
 
   def handle_info(
         {:tcp, socket, data},
-        %AvatarDef{id: id, account: account, gid: born_state, conn: conn} = player
+        %AvatarDef{id: id, account: account, gid: gid, conn: conn} = player
       ) do
     decoded = SimpleMsgPack.unpack!(data)
     Logger.debug("recvd message------------------------------------------------:
@@ -68,12 +195,13 @@ defmodule Avatar do
     \t\t time: \t #{inspect(:calendar.local_time())}
     \t\t msg: \t #{inspect(decoded, pretty: true, limit: :infinity)}
     ")
+    Process.put(:loop_close, true)
 
     new_player =
       case decoded do
         ["info", ["login:choose_born_state", _id, _params]] ->
           Process.put(:new, true)
-          Client.send_msg(conn, ["login:choose_born_state", born_state])
+          Client.send_msg(conn, ["login:choose_born_state", gid])
           player
 
         ["info" | event_msg] ->
@@ -111,8 +239,8 @@ defmodule Avatar do
               Process.put(:svr_aid, new_player.id)
               Avatar.Ets.insert(account, %{pid: self(), aid: new_player.id})
               MsgCounter.res_onlines_add()
-              Process.send_after(self(), {:loop}, 5000)
-              new_player
+              new_ref = Process.send_after(self(), :loop, 5000)
+              struct(new_player, %{loop_ref: new_ref})
 
             _ ->
               player
@@ -123,39 +251,6 @@ defmodule Avatar do
       end
 
     {:noreply, new_player}
-  end
-
-  def handle_info({:loop}, %AvatarDef{conn: conn, city_pos: city_pos, AI: ai} = player) do
-    now = System.system_time(:second)
-    last_op_ts = Process.get(:last_op_ts, 0)
-    delta_sec = trunc(now - last_op_ts)
-    Process.send_after(self(), {:loop}, 5000)
-    Client.send_msg(conn, ["ping", 1])
-
-    cond do
-      Process.get(:new, false) ->
-        Process.put(:new, false)
-        Client.send_msg(conn, ["gm", "god"])
-        Client.send_msg(conn, ["gm", "init_bot"])
-        {:noreply, player}
-
-      ai and delta_sec >= 15 ->
-        Process.put(:last_op_ts, now)
-        Client.send_msg(conn, ["see", city_pos, 10])
-
-        new_player =
-          case AvatarLoop.loop(player) do
-            {:ok, new_player} -> new_player
-            _ -> player
-          end
-
-        {:noreply, new_player}
-
-      true ->
-        # Logger.info("player: #{inspect(player.units, pretty: true, limit: :infinity)}")
-        # Logger.info("player: #{inspect(player.fixed_units, pretty: true, limit: :infinity)}")
-        {:noreply, player}
-    end
   end
 
   def handle_info({:reply, msg}, %{conn: conn} = player) do
@@ -173,6 +268,44 @@ defmodule Avatar do
     end
 
     {:noreply, player}
+  end
+
+  def handle_info(
+        {:tcp_closed, socket},
+        %AvatarDef{
+          conn: conn,
+          server_ip: server_ip,
+          server_port: server_port,
+          id: aid,
+          account: name,
+          token: token,
+          claim: claim,
+          loop_ref: prev_ref
+        } = player
+      ) do
+    Client.tcp_close(conn)
+
+    case Client.tcp_connect(server_ip, server_port) do
+      {:ok, new_conn} ->
+        Client.send_msg(new_conn, ["login", name, aid, token, claim, true])
+        is_reference(prev_ref) and Process.cancel_timer(prev_ref)
+        new_ref = Process.send_after(self(), :loop, 1000)
+        new_player = struct(player, %{conn: new_conn, loop_ref: new_ref})
+        {:noreply, new_player}
+
+      _ ->
+        handle_info({:tcp_closed, socket}, player)
+    end
+  end
+
+  def handle_info({:tcp_error, _, reason}, player) do
+    Logger.error("tcp error!")
+    {:stop, {:shutdown, {:tcp_error, reason}}, player}
+  end
+
+  def handle_info(:timeout, player) do
+    Logger.info("conn time out!")
+    {:stop, {:shutdown, :tcp_timeout}, player}
   end
 
   def handle_info(_msg, player) do
@@ -343,12 +476,12 @@ defmodule Avatar do
     MsgCounter.res_onlines_sub()
     # start_time = Utils.timestamp(:ms)
 
-    :gen_tcp.close(conn)
+    Client.tcp_close(conn)
     # end_time = Utils.timestamp(:ms)
     :ok
   end
 
-  def terminate({:shutdown, reason}, %{conn: conn} = player) do
+  def terminate({:shutdown, reason}, %AvatarDef{conn: conn} = player) do
     Logger.info(
       "terminate no normal, id is #{player.id}, reason is #{inspect(reason)}, data is #{inspect(player)}"
     )
@@ -356,8 +489,14 @@ defmodule Avatar do
     MsgCounter.res_onlines_sub()
     # start_time = Utils.timestamp(:ms)
 
-    :gen_tcp.close(conn)
+    Client.tcp_close(conn)
     # end_time = Utils.timestamp(:ms)
+    :ok
+  end
+
+  def terminate(_, %AvatarDef{conn: conn} = _player) do
+    MsgCounter.res_onlines_sub()
+    Client.tcp_close(conn)
     :ok
   end
 

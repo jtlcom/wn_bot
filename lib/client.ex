@@ -1,6 +1,53 @@
 defmodule Client do
   require Logger
-  # @timeout 9_999_999
+
+  def packet, do: 4
+
+  def tcp_close(conn) do
+    is_port(conn) && :gen_tcp.close(conn)
+  end
+
+  def tcp_connect(server_ip, server_port) do
+    Logger.info("tcp_connect")
+
+    :gen_tcp.connect(
+      server_ip,
+      server_port,
+      [
+        :binary,
+        packet: packet(),
+        active: true,
+        recbuf: 1024 * 1024 * Application.get_env(:whynot_bot, :recv_buff, 20),
+        keepalive: true,
+        nodelay: true
+      ],
+      60000
+    )
+  end
+
+  def login_post(server_ip, account) do
+    login_url =
+      case "#{server_ip}" |> String.split(".") do
+        ["192", "168" | _] ->
+          "http://192.168.1.92:8080/auth/whynot"
+
+        ["42", "193" | _] ->
+          "http://42.193.252.182:8008/auth/whynot"
+
+        ["159", "75" | _] ->
+          "http://159.75.177.225:8008/auth/whynot"
+
+        _ ->
+          "http://192.168.1.92:8080/auth/whynot"
+      end
+
+    HTTPoison.post(
+      login_url,
+      %{"account" => account, "password" => "111111"} |> URI.encode_query(),
+      [{"Content-Type", "application/x-www-form-urlencoded"}],
+      timeout: 5000
+    )
+  end
 
   def send_msg(conn, msg) do
     # Process.sleep(50)
@@ -26,6 +73,7 @@ defmodule Client do
         aid = Process.get(:svr_aid, 0)
         Logger.debug("send message------------------------------------------------:
         \t\t avatar: \t #{aid}
+        \t\t account: \t #{Process.get(:account, nil)}
         \t\t time: \t #{inspect(:calendar.local_time())}
         \t\t msg: \t #{inspect(msg, pretty: true, limit: :infinity)}
         ")
