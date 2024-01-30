@@ -130,23 +130,6 @@ defmodule Avatar do
 
     new_player =
       cond do
-        Process.get(:loop_close, false) ->
-          Client.tcp_close(conn)
-
-          case Client.tcp_connect(server_ip, server_port) do
-            {:ok, conn} ->
-              Client.send_msg(conn, ["login", name, aid, token, claim, true])
-              now = Utils.timestamp()
-              Process.put(:last_op_ts, now)
-              new_ref = Process.send_after(self(), :loop, 1000)
-              struct(player, %{conn: conn, loop_ref: new_ref})
-
-            _ ->
-              Logger.warning("tcp_connect failed")
-              new_ref = Process.send_after(self(), :loop, 1000)
-              struct(player, %{loop_ref: new_ref})
-          end
-
         Process.get(:new, false) ->
           Process.put(:new, false)
           Client.send_msg(conn, ["gm", "god"])
@@ -180,6 +163,23 @@ defmodule Avatar do
             _ ->
               new_ref = Process.send_after(self(), :loop, 5000)
               struct(player, %{AI: true, loop_ref: new_ref})
+          end
+
+        ai == 2 ->
+          Client.tcp_close(conn)
+
+          case Client.tcp_connect(server_ip, server_port) do
+            {:ok, conn} ->
+              Client.send_msg(conn, ["login", name, aid, token, claim, true])
+              now = Utils.timestamp()
+              Process.put(:last_op_ts, now)
+              new_ref = Process.send_after(self(), :loop, 1000)
+              struct(player, %{conn: conn, loop_ref: new_ref})
+
+            _ ->
+              Logger.warning("tcp_connect failed")
+              new_ref = Process.send_after(self(), :loop, 1000)
+              struct(player, %{loop_ref: new_ref})
           end
 
         ai and trunc(Utils.timestamp() - last_ts) >= 5 ->
@@ -219,7 +219,6 @@ defmodule Avatar do
     \t\t time: \t #{inspect(:calendar.local_time())}
     \t\t msg: \t #{inspect(decoded, pretty: true, limit: :infinity)}
     ")
-    Process.put(:loop_close, true)
 
     new_player =
       case decoded do
