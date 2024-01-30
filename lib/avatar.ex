@@ -28,8 +28,6 @@ defmodule Avatar do
   require Logger
   require Utils
 
-  def packet, do: 4
-
   def start_link(args, opts \\ []) do
     GenServer.start_link(__MODULE__, args, opts)
   end
@@ -157,6 +155,32 @@ defmodule Avatar do
           Process.sleep(500)
           Client.send_msg(conn, ["gm", "god_func"])
           player
+
+        ai == 1 ->
+          op_index = Process.get(:op_index, 0)
+
+          case Enum.at(OpList.list(), op_index) do
+            {now_ms, params} when is_list(params) ->
+              new_params = OpList.trans_params(params, player)
+
+              Logger.info("op_index: #{op_index}, new_params: #{inspect(new_params)}")
+              Client.send_msg(conn, new_params)
+              Process.put(:op_index, op_index + 1)
+
+              case Enum.at(OpList.list(), op_index + 1) do
+                {new_ms, params} when is_list(params) ->
+                  new_ref = Process.send_after(self(), :loop, new_ms - now_ms)
+                  struct(player, %{loop_ref: new_ref})
+
+                _ ->
+                  new_ref = Process.send_after(self(), :loop, 5000)
+                  struct(player, %{loop_ref: new_ref})
+              end
+
+            _ ->
+              new_ref = Process.send_after(self(), :loop, 5000)
+              struct(player, %{loop_ref: new_ref})
+          end
 
         ai and trunc(Utils.timestamp() - last_ts) >= 5 ->
           Client.send_msg(conn, ["see", city_pos, 2, 14])
