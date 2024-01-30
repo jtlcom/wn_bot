@@ -560,16 +560,18 @@ defmodule Avatar do
     })
   end
 
-  def analyze_verse(%AvatarDef{units: units} = player, type) do
+  def analyze_verse(%AvatarDef{units: units, grids: grids}, type) do
     case map_size(units) > 0 and type do
       :attack ->
-        total_pos =
-          units
+        own_pos_list =
+          grids
+          |> Map.keys()
           |> Enum.flat_map(fn
-            {pos, %{"aid" => aid} = _pos_data} -> if aid == player.id, do: [pos], else: []
+            [x, y] -> [{x, y}]
             _ -> []
           end)
 
+        total_pos = Oddr.neighbors(own_pos_list, 2, false)
         if length(total_pos) > 0, do: Enum.random(total_pos), else: nil
 
       :forward ->
@@ -584,6 +586,11 @@ defmodule Avatar do
 
       _ ->
         nil
+    end
+    |> case do
+      [_x, _y] = pos -> pos
+      {x, y} -> [x, y]
+      _ -> nil
     end
   end
 
