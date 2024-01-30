@@ -8,6 +8,7 @@ defmodule PlugRouter do
 
   get "/" do
     data = "
+total_aids: #{inspect(Supervisor.which_children(Avatars) |> length)}
 onlines_count: #{inspect(MsgCounter.get_onlines_count())}\n
 dead_count: #{inspect(MsgCounter.get_dead_count())}"
     send_resp(conn, 200, data)

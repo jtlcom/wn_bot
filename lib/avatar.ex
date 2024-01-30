@@ -260,6 +260,7 @@ defmodule Avatar do
             %AvatarDef{city_pos: city_pos, conn: conn} = new_player ->
               Client.send_msg(conn, ["login_done"])
               Client.send_msg(conn, ["see", city_pos, 10])
+              Client.send_msg(conn, ["mail:list", "system", 0])
               Process.put(:svr_aid, new_player.id)
               Avatar.Ets.insert(account, %{pid: self(), aid: new_player.id})
               MsgCounter.res_onlines_add()
