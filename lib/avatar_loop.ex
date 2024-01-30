@@ -38,8 +38,9 @@ defmodule AvatarLoop do
         # 随机执行其一
 
         weight = %{
+          gm: 10,
           forward: 10,
-          attack: 100,
+          attack: 10,
           attack_back: 10,
           chat: 40,
           gacha: 30,
@@ -62,11 +63,14 @@ defmodule AvatarLoop do
           end)
 
         cond do
-          result == :forward ->
-            troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.random()
+          result == :gm ->
+            Client.send_msg(conn, ["gm", "hero_power", 120])
+            Client.send_msg(conn, ["gm", "rich", 20000])
 
+          result == :forward ->
             case Avatar.analyze_verse(player, :forward) do
               [_x, _y] = pos ->
+                troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.random()
                 Client.send_msg(conn, ["troop_hero:add_hero_hp", troop_guid, [9999, 9999, 9999]])
                 Process.sleep(1000)
                 Client.send_msg(conn, ["op", "forward", [troop_guid, pos]])
@@ -75,13 +79,10 @@ defmodule AvatarLoop do
                 nil
             end
 
-            {:ok, player}
-
           result == :attack ->
-            troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.random()
-
             case Avatar.analyze_verse(player, :attack) do
               [_x, _y] = pos ->
+                troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.random()
                 Client.send_msg(conn, ["troop_hero:add_hero_hp", troop_guid, [9999, 9999, 9999]])
                 Process.sleep(1000)
                 Client.send_msg(conn, ["op", "attack", [troop_guid, pos, 1, false]])
@@ -90,13 +91,10 @@ defmodule AvatarLoop do
                 nil
             end
 
-            {:ok, player}
-
           result == :attack_back ->
-            troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.random()
-
             case Avatar.analyze_verse(player, :attack) do
               [_x, _y] = pos ->
+                troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.random()
                 Client.send_msg(conn, ["troop_hero:add_hero_hp", troop_guid, [9999, 9999, 9999]])
                 Process.sleep(1000)
                 Client.send_msg(conn, ["op", "attack", [troop_guid, pos, 1, true]])
@@ -105,12 +103,9 @@ defmodule AvatarLoop do
                 nil
             end
 
-            {:ok, player}
-
           result == :chat ->
             msg = Enum.random(["test", "hah", "hola", "你好~"])
             Client.send_msg(conn, ["chat:send", 1, 1, msg, "{}"])
-            {:ok, player}
 
           result == :gacha ->
             Client.send_msg(conn, ["gacha:gacha", 1, 5, 1])
@@ -118,16 +113,16 @@ defmodule AvatarLoop do
             Client.send_msg(conn, ["gacha:gacha", 1, 5, 1])
             Process.sleep(1000)
             Client.send_msg(conn, ["gacha:gacha", 1, 5, 1])
-            {:ok, player}
 
           result == :mail ->
             max_mail_id = (system_mails != %{} && system_mails |> Map.keys() |> Enum.max()) || 0
             Client.send_msg(conn, ["mail:get_attachment", "system", max_mail_id])
-            {:ok, player}
 
           true ->
-            {:ok, player}
+            nil
         end
+
+        {:ok, player}
     end
   end
 
