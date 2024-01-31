@@ -144,7 +144,7 @@ defmodule Avatar do
 
           case Enum.at(OpList.list(), op_index) do
             {now_ms, params} when is_list(params) ->
-              new_params = OpList.trans_params(params, player)
+              new_params = Avatar.trans_params(params, player)
 
               Logger.info("op_index: #{op_index}, new_params: #{inspect(new_params)}")
               Client.send_msg(conn, new_params)
@@ -352,7 +352,8 @@ defmodule Avatar do
   end
 
   def handle_cast({:apply, type, params}, player) do
-    Client.send_msg(player.conn, List.wrap(type) ++ List.wrap(params))
+    new_params = Avatar.trans_params(List.wrap(params), player)
+    Client.send_msg(player.conn, List.wrap(type) ++ new_params)
     {:noreply, player}
   end
 
@@ -591,6 +592,77 @@ defmodule Avatar do
       {x, y} -> [x, y]
       _ -> nil
     end
+  end
+
+  def trans_params(
+        params,
+        %AvatarDef{
+          id: aid,
+          city_pos: city_pos,
+          troops: troops,
+          heros: heros,
+          gid: gid,
+          system_mails: system_mails
+        } = player
+      ) do
+    Enum.flat_map(params, fn
+      :aid ->
+        [aid]
+
+      :gid ->
+        [gid]
+
+      :ts ->
+        [Utils.timestamp()]
+
+      :ms ->
+        [Utils.timestamp(:ms)]
+
+      :city_pos ->
+        [city_pos]
+
+      :rand_troop ->
+        [troops |> Map.keys() |> Enum.random()]
+
+      :troop_1 ->
+        [troops |> Map.keys() |> Enum.min()]
+
+      :troop_2 ->
+        [troops |> Map.keys() |> Enum.sort(:asc) |> Enum.at(1)]
+
+      :rand_pos ->
+        case Avatar.analyze_verse(player, :forward) do
+          [_x, _y] = pos -> [pos]
+          _ -> [city_pos]
+        end
+
+      :attack_pos ->
+        case Avatar.analyze_verse(player, :attack) do
+          [_x, _y] = pos -> [pos]
+          _ -> [city_pos]
+        end
+
+      :rand_hero ->
+        [heros |> Map.keys() |> Enum.random()]
+
+      :name ->
+        ["BOT#{Enum.random(1..1_000_000)}"]
+
+      :max_mail_id ->
+        [(system_mails != %{} && system_mails |> Map.keys() |> Enum.max()) || 0]
+
+      other when is_list(other) ->
+        [trans_params(other, player)]
+
+      string when is_binary(string) ->
+        trans_params([String.to_atom(string)], player)
+
+      other when is_atom(other) ->
+        ["#{other}"]
+
+      other ->
+        [other]
+    end)
   end
 
   defp client_ip(socket) do

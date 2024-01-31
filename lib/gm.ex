@@ -1,7 +1,4 @@
 defmodule Gm do
-  # ["gm:open_act", act_id, time]
-  # ["gm", "god", 50]
-
   @spec gm(String.t(), integer, integer, list()) :: :ok
   def gm(name_prefix, from_id, to_id, params) do
     Enum.each(from_id..to_id, fn this_id ->
