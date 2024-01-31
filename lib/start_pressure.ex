@@ -31,14 +31,24 @@ defmodule StartPressure do
     account = name_prefix <> "#{id}"
 
     start_time = Utils.timestamp(:ms)
-    gid = div(id, 1000) |> rem(3) |> Kernel.+(1)
 
-    Avatar.Supervisor.start_child(
-      {server_ip, server_port, account, gid, ai},
-      name: {:global, {:name, Guid.name(account)}}
-    )
+    gid =
+      case "#{id}" |> String.at(0) do
+        "1" -> 1
+        "2" -> 2
+        "3" -> 3
+        _ -> nil
+      end
 
-    end_time = Utils.timestamp(:ms)
-    Logger.info("login account: #{inspect(account)}, login_used: #{end_time - start_time}")
+    if is_nil(gid) do
+      Logger.warning("gid error, id: #{id}")
+    else
+      Avatar.Supervisor.start_child({server_ip, server_port, account, gid, ai},
+        name: {:global, {:name, Guid.name(account)}}
+      )
+
+      end_time = Utils.timestamp(:ms)
+      Logger.info("login account: #{inspect(account)}, login_used: #{end_time - start_time}")
+    end
   end
 end
