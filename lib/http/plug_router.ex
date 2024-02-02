@@ -9,9 +9,13 @@ defmodule PlugRouter do
   get "/" do
     data = "
 total_aids: #{inspect(Supervisor.which_children(Avatars) |> length)}
-onlines_count: #{inspect(MsgCounter.get_onlines_count())}\n
-dead_count: #{inspect(MsgCounter.get_dead_count())}"
+onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
     send_resp(conn, 200, data)
+  end
+
+  get "/help/:question" do
+    res = Http.Help.get_res(question)
+    send_resp(conn, 200, res)
   end
 
   get "/get_info" do

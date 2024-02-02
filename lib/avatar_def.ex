@@ -21,5 +21,6 @@ defmodule AvatarDef do
             dynamic_units: %{},
             AI: false,
             system_mails: %{},
-            group_mails: %{}
+            group_mails: %{},
+            login_finish: false
 end

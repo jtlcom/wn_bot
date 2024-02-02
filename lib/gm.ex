@@ -49,6 +49,14 @@ defmodule Gm do
     end)
   end
 
+  def summon(name_prefix, from_id, to_id, x, y, troop_index, is_main_team) do
+    Enum.each(from_id..to_id, fn this_id ->
+      account = name_prefix <> "#{this_id}"
+      this_pid = Avatar.Ets.load_value(account) |> Map.get(:pid)
+      Router.route(this_pid, {:summon, x, y, troop_index, is_main_team})
+    end)
+  end
+
   def gacha(num) do
     Realm.broadcast({:gacha, num})
   end

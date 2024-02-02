@@ -134,6 +134,8 @@ defmodule HandlerAPI do
 end
 
 defmodule HandlerWorkerAPI do
+  require Logger
+
   @moduledoc ~S"""
   独立进程函数API模块
 
@@ -219,7 +221,7 @@ defmodule HandlerWorkerAPI do
         else
           # 以防万一，进程不存在时直接执行操作
           is_not_self? &&
-            Logger.warn(
+            Logger.warning(
               "#{@worker} cast failed, not found process, direct exec, msg:#{inspect(msg)}"
             )
 
@@ -238,16 +240,16 @@ defmodule HandlerWorkerAPI do
               if function_exported?(mod, func, length(args)) do
                 apply(mod, func, args)
               else
-                Logger.warn("#{@worker} cast failed, func not exist, msg:#{inspect(msg)}")
+                Logger.warning("#{@worker} cast failed, func not exist, msg:#{inspect(msg)}")
               end
 
             _ ->
-              Logger.warn("#{@worker} cast failed, msg format is correct, msg:#{inspect(msg)}")
+              Logger.warning("#{@worker} cast failed, msg format is correct, msg:#{inspect(msg)}")
           end
         end
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} cast failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
       end
@@ -265,7 +267,7 @@ defmodule HandlerWorkerAPI do
             GenServer.call(pid, {msg, default}, timeout)
           catch
             :exit, reason ->
-              Logger.warn(
+              Logger.warning(
                 "#{@worker} call failed, reason:#{inspect(reason)}, direct exec, msg:#{inspect(msg)}"
               )
 
@@ -274,7 +276,7 @@ defmodule HandlerWorkerAPI do
         else
           # 以防万一，进程不存在时直接执行操作
           is_not_self? &&
-            Logger.warn(
+            Logger.warning(
               "#{@worker} call failed, not found process, direct exec, msg:#{inspect(msg)}"
             )
 
@@ -290,18 +292,18 @@ defmodule HandlerWorkerAPI do
               if function_exported?(mod, func, length(args)) do
                 apply(mod, func, args)
               else
-                Logger.warn("#{@worker} call failed, func not exist, msg:#{inspect(msg)}")
+                Logger.warning("#{@worker} call failed, func not exist, msg:#{inspect(msg)}")
                 default
               end
 
             _ ->
-              Logger.warn("#{@worker} call failed, msg format is correct, msg:#{inspect(msg)}")
+              Logger.warning("#{@worker} call failed, msg format is correct, msg:#{inspect(msg)}")
               default
           end
         end
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} call failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -316,7 +318,7 @@ defmodule HandlerWorkerAPI do
         {:reply, apply(__MODULE__, func, args), state}
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_call failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -328,7 +330,7 @@ defmodule HandlerWorkerAPI do
         {:reply, apply(func, args), state}
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_call failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -344,7 +346,7 @@ defmodule HandlerWorkerAPI do
         end
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_call failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -360,7 +362,7 @@ defmodule HandlerWorkerAPI do
         end
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_call failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -372,7 +374,7 @@ defmodule HandlerWorkerAPI do
         {:reply, apply(mod, func, args), state}
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_call failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -389,7 +391,7 @@ defmodule HandlerWorkerAPI do
         end
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_call failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -401,7 +403,7 @@ defmodule HandlerWorkerAPI do
         {:noreply, state}
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_cast failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -413,7 +415,7 @@ defmodule HandlerWorkerAPI do
         {:noreply, state}
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_cast failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -427,7 +429,7 @@ defmodule HandlerWorkerAPI do
         end
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_cast failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -441,7 +443,7 @@ defmodule HandlerWorkerAPI do
         end
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_cast failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -454,7 +456,7 @@ defmodule HandlerWorkerAPI do
         {:noreply, state}
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_cast failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -470,7 +472,7 @@ defmodule HandlerWorkerAPI do
         end
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_cast failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -482,7 +484,7 @@ defmodule HandlerWorkerAPI do
         {:noreply, state}
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_info failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -494,7 +496,7 @@ defmodule HandlerWorkerAPI do
         {:noreply, state}
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_info failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -507,7 +509,7 @@ defmodule HandlerWorkerAPI do
         {:noreply, state}
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_info failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -521,7 +523,7 @@ defmodule HandlerWorkerAPI do
         end
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_cast failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -535,7 +537,7 @@ defmodule HandlerWorkerAPI do
         end
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_cast failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -551,7 +553,7 @@ defmodule HandlerWorkerAPI do
         end
       rescue
         error ->
-          Logger.warn(
+          Logger.warning(
             "#{@worker} handle_cast failed, msg:#{inspect(msg)}, error: #{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
           )
 
@@ -559,12 +561,12 @@ defmodule HandlerWorkerAPI do
       end
 
       def handle_info({:EXIT, _, reason}, state) do
-        Logger.warn("#{@worker} EXIT, reason:#{inspect(reason)}")
+        Logger.warning("#{@worker} EXIT, reason:#{inspect(reason)}")
         {:stop, reason, state}
       end
 
       # def handle_info(msg, state) do
-      #   Logger.warn("#{@worker} handle_info failed, msg:#{inspect(msg)}")
+      #   Logger.warning("#{@worker} handle_info failed, msg:#{inspect(msg)}")
       #   {:noreply, state}
       # end
 
@@ -624,14 +626,14 @@ defmodule InvokeHandlerAPI do
             GenServer.call(pid, {msg, default}, timeout)
           catch
             :exit, reason ->
-              Logger.warn(
+              Logger.warning(
                 "#{__MODULE__} call failed, reason:#{inspect(reason)}, msg:#{inspect(msg)}"
               )
 
               default
           end
         else
-          Logger.warn("#{__MODULE__} call failed, not found process, msg:#{inspect(msg)}")
+          Logger.warning("#{__MODULE__} call failed, not found process, msg:#{inspect(msg)}")
           default
         end
       end
@@ -644,20 +646,20 @@ defmodule InvokeHandlerAPI do
             GenServer.call(pid, {msg, default}, timeout)
           catch
             :exit, reason ->
-              Logger.warn(
+              Logger.warning(
                 "#{__MODULE__} call failed, reason:#{inspect(reason)}, msg:#{inspect(msg)}"
               )
 
               default
           end
         else
-          Logger.warn("#{__MODULE__} call failed, not found process, msg:#{inspect(msg)}")
+          Logger.warning("#{__MODULE__} call failed, not found process, msg:#{inspect(msg)}")
           default
         end
       end
 
       def call(msg, default, _timeout) do
-        Logger.warn("#{__MODULE__} call failed, msg incorrect, msg:#{inspect(msg)}")
+        Logger.warning("#{__MODULE__} call failed, msg incorrect, msg:#{inspect(msg)}")
         default
       end
 
@@ -669,14 +671,14 @@ defmodule InvokeHandlerAPI do
             GenServer.cast(pid, msg)
           catch
             :exit, reason ->
-              Logger.warn(
+              Logger.warning(
                 "#{__MODULE__} cast failed, reason:#{inspect(reason)}, msg:#{inspect(msg)}"
               )
 
               :failed
           end
         else
-          Logger.warn("#{__MODULE__} cast failed, not found process, msg:#{inspect(msg)}")
+          Logger.warning("#{__MODULE__} cast failed, not found process, msg:#{inspect(msg)}")
           :failed
         end
       end
@@ -689,20 +691,20 @@ defmodule InvokeHandlerAPI do
             GenServer.cast(pid, msg)
           catch
             :exit, reason ->
-              Logger.warn(
+              Logger.warning(
                 "#{__MODULE__} cast failed, reason:#{inspect(reason)}, msg:#{inspect(msg)}"
               )
 
               :failed
           end
         else
-          Logger.warn("#{__MODULE__} cast failed, not found process, msg:#{inspect(msg)}")
+          Logger.warning("#{__MODULE__} cast failed, not found process, msg:#{inspect(msg)}")
           :failed
         end
       end
 
       def cast(msg) do
-        Logger.warn("#{__MODULE__} cast failed, msg incorrect, msg:#{inspect(msg)}")
+        Logger.warning("#{__MODULE__} cast failed, msg incorrect, msg:#{inspect(msg)}")
         :failed
       end
     end

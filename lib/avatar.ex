@@ -141,8 +141,9 @@ defmodule Avatar do
 
         ai == 1 ->
           op_index = Process.get(:op_index, 0)
+          op_list = OpList.list(1)
 
-          case Enum.at(OpList.list(), op_index) do
+          case Enum.at(op_list, op_index) do
             {now_ms, params} when is_list(params) ->
               new_params = Avatar.trans_params(params, player)
 
@@ -150,7 +151,7 @@ defmodule Avatar do
               Client.send_msg(conn, new_params)
               Process.put(:op_index, op_index + 1)
 
-              case Enum.at(OpList.list(), op_index + 1) do
+              case Enum.at(op_list, op_index + 1) do
                 {new_ms, params} when is_list(params) ->
                   new_ref = Process.send_after(self(), :loop, new_ms - now_ms)
                   struct(player, %{loop_ref: new_ref})
@@ -258,13 +259,13 @@ defmodule Avatar do
           case player |> login_update(svr_data) do
             %AvatarDef{city_pos: city_pos, conn: conn} = new_player ->
               Client.send_msg(conn, ["login_done"])
-              Client.send_msg(conn, ["see", city_pos, 10])
+              Client.send_msg(conn, ["see", city_pos, 1, 7])
               Client.send_msg(conn, ["mail:list", "system", 0])
               Process.put(:svr_aid, new_player.id)
               Avatar.Ets.insert(account, %{pid: self(), aid: new_player.id})
               MsgCounter.res_onlines_add()
               new_ref = Process.send_after(self(), :loop, 5000)
-              struct(new_player, %{loop_ref: new_ref})
+              struct(new_player, %{loop_ref: new_ref, login_finish: true})
 
             _ ->
               player
@@ -294,37 +295,36 @@ defmodule Avatar do
     {:noreply, player}
   end
 
-  def handle_info(
-        {:tcp_closed, socket},
-        %AvatarDef{
-          conn: conn,
-          server_ip: server_ip,
-          server_port: server_port,
-          id: aid,
-          account: name,
-          token: token,
-          claim: claim,
-          loop_ref: prev_ref
-        } = player
-      ) do
-    Client.tcp_close(conn)
+  def handle_info({:tcp_closed, socket}, player) do
+    socket != nil && Logger.error("tcp closed!")
 
-    case Client.tcp_connect(server_ip, server_port) do
-      {:ok, new_conn} ->
-        Client.send_msg(new_conn, ["login", name, aid, token, claim, true])
-        is_reference(prev_ref) and Process.cancel_timer(prev_ref)
-        new_ref = Process.send_after(self(), :loop, 1000)
-        new_player = struct(player, %{conn: new_conn, loop_ref: new_ref})
+    case reconnect(player) do
+      {:ok, new_player} ->
         {:noreply, new_player}
 
+      {:failed, new_player} ->
+        Process.sleep(1000)
+        handle_info({:tcp_closed, nil}, new_player)
+
       _ ->
-        handle_info({:tcp_closed, socket}, player)
+        {:stop, {:shutdown, :tcp_closed}, player}
     end
   end
 
-  def handle_info({:tcp_error, _, reason}, player) do
-    Logger.error("tcp error!")
-    {:stop, {:shutdown, {:tcp_error, reason}}, player}
+  def handle_info({:tcp_error, socket, reason}, player) do
+    socket != nil && Logger.error("tcp error!")
+
+    case reconnect(player) do
+      {:ok, new_player} ->
+        {:noreply, new_player}
+
+      {:failed, new_player} ->
+        Process.sleep(1000)
+        handle_info({:tcp_error, nil, reason}, new_player)
+
+      _ ->
+        {:stop, {:shutdown, {:tcp_error, reason}}, player}
+    end
   end
 
   def handle_info(:timeout, player) do
@@ -500,14 +500,10 @@ defmodule Avatar do
 
   # -------------------------------------------------------------------------------
 
-  def terminate(:normal, %{conn: conn} = _player) do
+  def terminate(:normal, %{conn: conn, login_finish: login_finish} = _player) do
     Logger.info("avatar ternimate")
-    MsgCounter.res_onlines_sub()
-    # start_time = Utils.timestamp(:ms)
-
+    login_finish && MsgCounter.res_onlines_sub()
     Client.tcp_close(conn)
-    # end_time = Utils.timestamp(:ms)
-    :ok
   end
 
   def terminate({:shutdown, reason}, %AvatarDef{conn: conn} = player) do
@@ -515,23 +511,15 @@ defmodule Avatar do
       "terminate no normal, id is #{player.id}, reason is #{inspect(reason)}, data is #{inspect(player)}"
     )
 
-    MsgCounter.res_onlines_sub()
-    # start_time = Utils.timestamp(:ms)
-
     Client.tcp_close(conn)
-    # end_time = Utils.timestamp(:ms)
-    :ok
   end
 
   def terminate(_, %AvatarDef{conn: conn} = _player) do
-    MsgCounter.res_onlines_sub()
     Client.tcp_close(conn)
-    :ok
   end
 
   def terminate(_, _player) do
-    MsgCounter.res_onlines_sub()
-    :ok
+    nil
   end
 
   def login_update(%AvatarDef{} = player, svr_data) do
@@ -598,6 +586,7 @@ defmodule Avatar do
         params,
         %AvatarDef{
           id: aid,
+          conn: conn,
           city_pos: city_pos,
           troops: troops,
           heros: heros,
@@ -618,9 +607,6 @@ defmodule Avatar do
       :ms ->
         [Utils.timestamp(:ms)]
 
-      :city_pos ->
-        [city_pos]
-
       :rand_troop ->
         [troops |> Map.keys() |> Enum.random()]
 
@@ -630,16 +616,27 @@ defmodule Avatar do
       :troop_2 ->
         [troops |> Map.keys() |> Enum.sort(:asc) |> Enum.at(1)]
 
+      :city_pos ->
+        [city_pos]
+
       :rand_pos ->
         case Avatar.analyze_verse(player, :forward) do
-          [_x, _y] = pos -> [pos]
-          _ -> [city_pos]
+          [_x, _y] = pos ->
+            Client.send_msg(conn, ["tile_detail", pos])
+            [pos]
+
+          _ ->
+            [city_pos]
         end
 
       :attack_pos ->
         case Avatar.analyze_verse(player, :attack) do
-          [_x, _y] = pos -> [pos]
-          _ -> [city_pos]
+          [_x, _y] = pos ->
+            Client.send_msg(conn, ["tile_detail", pos])
+            [pos]
+
+          _ ->
+            [city_pos]
         end
 
       :rand_hero ->
@@ -650,6 +647,12 @@ defmodule Avatar do
 
       :max_mail_id ->
         [(system_mails != %{} && system_mails |> Map.keys() |> Enum.max()) || 0]
+
+      true ->
+        [true]
+
+      false ->
+        [false]
 
       other when is_list(other) ->
         [trans_params(other, player)]
@@ -674,4 +677,35 @@ defmodule Avatar do
         ""
     end
   end
+
+  defp reconnect(
+         %AvatarDef{
+           conn: conn,
+           server_ip: server_ip,
+           server_port: server_port,
+           id: aid,
+           account: name,
+           token: token,
+           claim: claim,
+           loop_ref: prev_ref,
+           login_finish: login_finish
+         } = player
+       ) do
+    Client.tcp_close(conn)
+    login_finish && MsgCounter.res_onlines_sub()
+
+    case Client.tcp_connect(server_ip, server_port) do
+      {:ok, new_conn} ->
+        Client.send_msg(new_conn, ["login", name, aid, token, claim, true])
+        is_reference(prev_ref) and Process.cancel_timer(prev_ref)
+        # new_ref = Process.send_after(self(), :loop, 1000)
+        new_player = struct(player, %{conn: new_conn, login_finish: false})
+        {:ok, new_player}
+
+      _ ->
+        {:failed, struct(player, %{conn: nil, login_finish: false})}
+    end
+  end
+
+  defp reconnect(_), do: :error
 end

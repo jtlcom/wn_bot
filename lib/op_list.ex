@@ -1,5 +1,5 @@
 defmodule OpList do
-  def list() do
+  def list(1) do
     [
       {0, ["act_collect:info"]},
       {1, ["chat:history", 1, :ms]},
@@ -9,9 +9,9 @@ defmodule OpList do
       {6136, ["data:add_tutorial_step", 2_030_002]},
       {6702, ["data:add_tutorial_step", 2_030_003]},
       {7304, ["see", :city_pos, 1, 7]},
-      {7472, ["see", :city_pos, 1, 8]},
+      {7472, ["see", :rand_pos, 1, 8]},
       {7638, ["see", :city_pos, 1, 9]},
-      {7804, ["see", :city_pos, 1, 9]},
+      {7804, ["see", :rand_pos, 1, 9]},
       {7973, ["see", :city_pos, 1, 9]},
       {8272, ["data:add_tutorial_step", 2_030_004]},
       {9170, ["data:add_tutorial_step", 2_030_005]},
@@ -162,11 +162,11 @@ defmodule OpList do
       {189_884, ["data:add_tutorial_step", "2140004"]},
       {191_652, ["see", :city_pos, 1, 7]},
       {191_816, ["see", :city_pos, 1, 8]},
-      {192_329, ["see", :city_pos, 1, 9]},
+      {192_329, ["see", :rand_pos, 1, 9]},
       {192_492, ["see", :city_pos, 1, 9]},
-      {192_999, ["see", :city_pos, 2, 9]},
+      {192_999, ["see", :rand_pos, 2, 9]},
       {193_998, ["see", :city_pos, 2, 10]},
-      {194_163, ["see", :city_pos, 2, 12]},
+      {194_163, ["see", :rand_pos, 2, 12]},
       {195_007, ["see", :city_pos, 2, 13]},
       {195_017, ["data:add_tutorial_step", "2140006"]},
       {195_164, ["see", :city_pos, 3, 14]},
@@ -176,15 +176,15 @@ defmodule OpList do
       {199_207, ["data:add_tutorial_step", "2140009"]},
       {199_279, ["data:add_tutorial_step", "2140010"]},
       {199_324, ["see", :city_pos, 3, 19]},
-      {199_824, ["see", :city_pos, 3, 20]},
+      {199_824, ["see", :rand_pos, 3, 20]},
       {200_169, ["see", :city_pos, 5, 31]},
-      {200_337, ["see", :city_pos, 5, 42]},
+      {200_337, ["see", :rand_pos, 5, 42]},
       {200_506, ["see", :city_pos, 6, 58]},
-      {200_683, ["see", :city_pos, 6, 79]},
+      {200_683, ["see", :rand_pos, 6, 79]},
       {200_862, ["see", :city_pos, 6, 105]},
-      {201_034, ["see", :city_pos, 8, 0]},
+      {201_034, ["see", :rand_pos, 8, 0]},
       {201_369, ["see", :city_pos, 9, 0]},
-      {201_924, ["see", :city_pos, 11, 0]},
+      {201_924, ["see", :rand_pos, 11, 0]},
       {202_300, ["see", :city_pos, 12, 0]},
       {202_309, ["data:add_tutorial_step", "2140011"]},
       {202_808, ["data:add_tutorial_step", "2140012"]},
@@ -565,5 +565,20 @@ defmodule OpList do
       {936_831, ["element_challenge:info"]},
       {940_166, ["see", :city_pos, 1, 7]}
     ]
+  end
+
+  def zzz(a) do
+    a
+    |> Enum.sort_by(&elem(&1, 0), :asc)
+    |> Enum.flat_map(fn
+      {time, [type, params]} when is_atom(type) ->
+        [{time, ["#{type}"] ++ List.wrap(params)}]
+
+      {time, [{type_1, type_2}, params]} when is_atom(type_1) and is_atom(type_2) ->
+        [{time, ["#{type_1}:#{type_2}"] ++ List.wrap(params)}]
+
+      {time, [type, params]} ->
+        [{time, List.wrap(type) ++ List.wrap(params)}]
+    end)
   end
 end
