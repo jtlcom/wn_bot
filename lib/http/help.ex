@@ -5,7 +5,7 @@ defmodule Http.Help do
         "此接口用于获取目前在bot服的连接信息, 返回参数为save_info接口中上传的连接信息"
 
       "save_info" ->
-        "此接口用于向bot服上传连接信息, 包含"
+        "此接口用于向bot服上传连接信息, 包含游戏服的IP, 端口, HTTP端口, "
 
       _ ->
         "不包含#{question}的帮助信息"

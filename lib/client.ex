@@ -31,14 +31,16 @@ defmodule Client do
         ["192", "168" | _] ->
           "http://192.168.1.92:8080/auth/whynot"
 
+        # 外网测试
         ["42", "193" | _] ->
           "http://42.193.252.182:8008/auth/whynot"
 
-        ["159", "75" | _] ->
-          "http://159.75.177.225:8008/auth/whynot"
+          # taptap
+          # ["159", "75" | _] ->
+          #   "http://159.75.177.225:8008/auth/whynot"
 
-        _ ->
-          "http://192.168.1.92:8080/auth/whynot"
+          # _ ->
+          #   "http://192.168.1.92:8080/auth/whynot"
       end
 
     HTTPoison.post(

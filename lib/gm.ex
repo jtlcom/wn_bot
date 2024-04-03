@@ -15,7 +15,7 @@ defmodule Gm do
   def forward(name_prefix, from_id, to_id, x, y, 0) do
     Enum.each(1..5, fn this_index ->
       forward(name_prefix, from_id, to_id, x, y, this_index)
-      Process.sleep(1500)
+      Process.sleep(500)
     end)
   end
 

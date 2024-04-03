@@ -137,7 +137,8 @@ defmodule Avatar do
           Client.send_msg(conn, ["gm", "init_bot"])
           Process.sleep(500)
           Client.send_msg(conn, ["gm", "god_func"])
-          player
+          new_ref = Process.send_after(self(), :loop, 1000)
+          struct(player, %{loop_ref: new_ref})
 
         ai == 1 ->
           op_index = Process.get(:op_index, 0)
@@ -221,61 +222,62 @@ defmodule Avatar do
     \t\t msg: \t #{inspect(decoded, pretty: true, limit: :infinity)}
     ")
 
-    new_player =
-      case decoded do
-        ["info", ["login:choose_born_state", _id, _params]] ->
-          Process.put(:new, true)
-          Client.send_msg(conn, ["login:choose_born_state", gid])
-          player
+    case decoded do
+      ["stop", "server closed"] ->
+        {:stop, {:shutdown, :tcp_closed}, player}
 
-        ["info" | event_msg] ->
-          event_msg
-          |> Enum.reduce(player, fn each_event_msg, acc ->
-            AvatarEvent.handle_event(each_event_msg, acc)
-          end)
-          |> case do
-            %AvatarDef{} = new_player ->
-              new_player
+      ["info", ["login:choose_born_state", _id, _params]] ->
+        Process.put(:new, true)
+        Client.send_msg(conn, ["login:choose_born_state", gid])
+        {:noreply, player}
 
-            _ ->
-              player
-          end
+      ["info" | event_msg] ->
+        event_msg
+        |> Enum.reduce(player, fn each_event_msg, acc ->
+          AvatarEvent.handle_event(each_event_msg, acc)
+        end)
+        |> case do
+          %AvatarDef{} = new_player ->
+            {:noreply, new_player}
 
-        ["evt" | event_msg] ->
-          event_msg
-          |> Enum.reduce(player, fn each_event_msg, acc ->
-            AvatarEvent.handle_event(each_event_msg, acc)
-          end)
-          |> case do
-            %AvatarDef{} = new_player ->
-              new_player
+          _ ->
+            {:noreply, player}
+        end
 
-            _ ->
-              player
-          end
+      ["evt" | event_msg] ->
+        event_msg
+        |> Enum.reduce(player, fn each_event_msg, acc ->
+          AvatarEvent.handle_event(each_event_msg, acc)
+        end)
+        |> case do
+          %AvatarDef{} = new_player ->
+            {:noreply, new_player}
 
-        ["login", svr_data] ->
-          # Supervisor.which_children(Avatars)
-          case player |> login_update(svr_data) do
-            %AvatarDef{city_pos: city_pos, conn: conn} = new_player ->
-              Client.send_msg(conn, ["login_done"])
-              Client.send_msg(conn, ["see", city_pos, 1, 7])
-              Client.send_msg(conn, ["mail:list", "system", 0])
-              Process.put(:svr_aid, new_player.id)
-              Avatar.Ets.insert(account, %{pid: self(), aid: new_player.id})
-              MsgCounter.res_onlines_add()
-              new_ref = Process.send_after(self(), :loop, 5000)
-              struct(new_player, %{loop_ref: new_ref, login_finish: true})
+          _ ->
+            {:noreply, player}
+        end
 
-            _ ->
-              player
-          end
+      ["login", svr_data] ->
+        # Supervisor.which_children(Avatars)
+        case player |> login_update(svr_data) do
+          %AvatarDef{city_pos: city_pos, conn: conn} = new_player ->
+            Client.send_msg(conn, ["login_done"])
+            Client.send_msg(conn, ["see", city_pos, 1, 7])
+            Client.send_msg(conn, ["mail:list", "system", 0])
+            Process.put(:svr_aid, new_player.id)
+            Avatar.Ets.insert(account, %{pid: self(), aid: new_player.id})
+            MsgCounter.res_onlines_add()
+            new_ref = Process.send_after(self(), :loop, 5000)
+            new_player = struct(new_player, %{loop_ref: new_ref, login_finish: true})
+            {:noreply, new_player}
 
-        _ ->
-          player
-      end
+          _ ->
+            {:noreply, player}
+        end
 
-    {:noreply, new_player}
+      _ ->
+        {:noreply, player}
+    end
   end
 
   def handle_info({:reply, msg}, %{conn: conn} = player) do
@@ -297,6 +299,7 @@ defmodule Avatar do
 
   def handle_info({:tcp_closed, socket}, player) do
     socket != nil && Logger.error("tcp closed!")
+    socket != nil && Logger.info("tcp closed: socket: #{inspect(socket)}")
 
     case reconnect(player) do
       {:ok, new_player} ->
@@ -373,6 +376,8 @@ defmodule Avatar do
       player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.sort() |> Enum.at(troop_index - 1)
 
     pos = [x, y]
+    Client.send_msg(player.conn, ["tile_detail", pos])
+    Process.sleep(500)
     Client.send_msg(player.conn, ["op", "attack", [troop_guid, pos, times, is_back?]])
     IO.puts("troop_guid: #{inspect(troop_guid)}}")
     {:noreply, player}
@@ -450,6 +455,26 @@ defmodule Avatar do
     {:noreply, player}
   end
 
+  def handle_cast(
+        {:kill_monster},
+        %AvatarDef{conn: conn, dynamic_units: dynamic_units, troops: troops} = player
+      ) do
+    Enum.reduce_while(dynamic_units, 0, fn
+      {_guid, %{"defencer" => %{"type" => 3, "cur_pos" => this_pos}}}, acc ->
+        Enum.each(troops, fn
+          {this_troop_guid, _} ->
+            Client.send_msg(conn, ["op", "forward", [this_troop_guid, this_pos, true]])
+        end)
+
+        {:halt, acc}
+
+      _, acc ->
+        {:cont, acc}
+    end)
+
+    {:noreply, player}
+  end
+
   def handle_cast({:reply, msg}, %{conn: conn, id: _id} = player) do
     [head | _] = ex_msg = msg
 
@@ -514,7 +539,9 @@ defmodule Avatar do
     Client.tcp_close(conn)
   end
 
-  def terminate(_, %AvatarDef{conn: conn} = _player) do
+  def terminate(reason, %AvatarDef{conn: conn, login_finish: login_finish} = _player) do
+    Logger.info("avatar ternimate, reason:#{reason}")
+    login_finish && MsgCounter.res_onlines_sub()
     Client.tcp_close(conn)
   end
 
@@ -548,8 +575,8 @@ defmodule Avatar do
     })
   end
 
-  def analyze_verse(%AvatarDef{units: units, grids: grids}, type) do
-    case map_size(units) > 0 and type do
+  def analyze_verse(%AvatarDef{units: units, grids: grids, gid: gid}, type) do
+    case map_size(units) >= 0 and type do
       :attack ->
         own_pos_list =
           grids
@@ -559,14 +586,14 @@ defmodule Avatar do
             _ -> []
           end)
 
-        total_pos = Oddr.neighbors(own_pos_list, 2, false)
+        total_pos = Oddr.neighbors(own_pos_list, 1, false)
         if length(total_pos) > 0, do: Enum.random(total_pos), else: nil
 
       :forward ->
         total_pos =
           units
           |> Enum.flat_map(fn
-            {pos, %{"aid" => _aid} = _pos_data} -> [pos]
+            {pos, %{"gid" => ^gid} = _pos_data} -> [pos]
             _ -> []
           end)
 

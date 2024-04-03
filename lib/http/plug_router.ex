@@ -38,6 +38,7 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
             "port" => port,
             "realm_http_port" => realm_http_port,
             "name_prefix" => name_prefix,
+            "target_gid" => t_gid,
             "from" => from,
             "to" => to,
             "AI" => ai
@@ -46,7 +47,8 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
               ip: ~c"#{ip}",
               port: port,
               realm_http_port: realm_http_port,
-              name_prefix: name_prefix,
+              login_prefix: name_prefix,
+              name_prefix: "#{name_prefix}_#{t_gid}_",
               from: from,
               to: to,
               AI: ai
@@ -77,8 +79,24 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
         )
 
         case {body, http_info} do
-          {%{}, %{ip: ip, port: port, name_prefix: name_prefix, from: from, to: to, AI: ai}} ->
-            HttpMgr.cast({:apply, StartPressure, :go, [ip, port, name_prefix, from, to, ai]})
+          {%{
+             "gid_1" => g1_nums,
+             "gid_2" => g2_nums,
+             "gid_3" => g3_nums
+           }, %{ip: ip, port: port, login_prefix: login_prefix, AI: ai}} ->
+            %{1 => g1_nums, 2 => g2_nums, 3 => g3_nums}
+            |> Enum.each(fn
+              {this_gid, this_nums} when is_integer(this_nums) and this_nums > 0 ->
+                Logger.info("this_gid: #{this_gid}, this_nums: #{this_nums},")
+
+                HttpMgr.cast(
+                  {:apply, StartPressure, :go,
+                   [ip, port, login_prefix, this_gid, 1, this_nums, ai]}
+                )
+
+              _ ->
+                nil
+            end)
 
             send_resp(conn, 200, "ok")
 
@@ -518,6 +536,43 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
     end
   end
 
+  post "/multi_move_born_state" do
+    length =
+      conn.req_headers |> Map.new() |> Map.get("content-length", "0") |> String.to_integer()
+
+    case length > 0 && Plug.Conn.read_body(conn, length: length) do
+      {:ok, body, conn} ->
+        body = Jason.decode!(body)
+        http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+
+        Logger.debug(
+          "/multi_move_born_state body: #{inspect(body, pretty: true)}, http_info: #{inspect(http_info, pretty: true)}"
+        )
+
+        case {body, http_info} do
+          {%{"gid" => gid}, %{name_prefix: name_prefix, from: from, to: to}} ->
+            total_pos = Grid.get_city_pos(gid)
+
+            Enum.each(from..to, fn
+              this_id ->
+                account = name_prefix <> "#{this_id}"
+                this_pid = Avatar.Ets.load_value(account) |> Map.get(:pid)
+                this_pos = Enum.at(total_pos, this_id - from)
+                pp = ["move_city"] ++ List.wrap(this_pos)
+                Router.route(this_pid, {:gm, pp})
+            end)
+
+            send_resp(conn, 200, "ok")
+
+          _ ->
+            send_resp(conn, 200, "error")
+        end
+
+      _ ->
+        send_resp(conn, 200, "error")
+    end
+  end
+
   post "/build" do
     length =
       conn.req_headers |> Map.new() |> Map.get("content-length", "0") |> String.to_integer()
@@ -537,6 +592,38 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
               account = name_prefix <> "#{this_id}"
               this_pid = Avatar.Ets.load_value(account) |> Map.get(:pid)
               Router.route(this_pid, {:build, build_id})
+            end)
+
+            send_resp(conn, 200, "ok")
+
+          _ ->
+            send_resp(conn, 200, "error")
+        end
+
+      _ ->
+        send_resp(conn, 200, "error")
+    end
+  end
+
+  post "/kill_monster" do
+    length =
+      conn.req_headers |> Map.new() |> Map.get("content-length", "0") |> String.to_integer()
+
+    case length > 0 && Plug.Conn.read_body(conn, length: length) do
+      {:ok, body, conn} ->
+        body = Jason.decode!(body)
+        http_info = Http.Ets.load_value(Map.get(conn, :remote_ip))
+
+        Logger.debug(
+          "/kill_monster body: #{inspect(body, pretty: true)}, http_info: #{inspect(http_info, pretty: true)}"
+        )
+
+        case {body, http_info} do
+          {%{}, %{name_prefix: name_prefix, from: from_id, to: to_id}} ->
+            Enum.each(from_id..to_id, fn this_id ->
+              account = name_prefix <> "#{this_id}"
+              this_pid = Avatar.Ets.load_value(account) |> Map.get(:pid)
+              Router.route(this_pid, {:kill_monster})
             end)
 
             send_resp(conn, 200, "ok")
