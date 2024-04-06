@@ -460,10 +460,10 @@ defmodule Avatar do
         %AvatarDef{conn: conn, dynamic_units: dynamic_units, troops: troops} = player
       ) do
     Enum.reduce_while(dynamic_units, 0, fn
-      {_guid, %{"defencer" => %{"type" => 3, "cur_pos" => this_pos}}}, acc ->
+      {_guid, %{"type" => 3, "pos" => this_pos}}, acc ->
         Enum.each(troops, fn
           {this_troop_guid, _} ->
-            Client.send_msg(conn, ["op", "forward", [this_troop_guid, this_pos, true]])
+            Client.send_msg(conn, ["op", "kill_monster", [this_troop_guid, this_pos, true]])
         end)
 
         {:halt, acc}
