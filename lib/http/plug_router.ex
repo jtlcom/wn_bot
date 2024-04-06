@@ -557,9 +557,15 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
               this_id ->
                 account = name_prefix <> "#{this_id}"
                 this_pid = Avatar.Ets.load_value(account) |> Map.get(:pid)
-                this_pos = Enum.at(total_pos, this_id - from)
-                pp = ["move_city"] ++ List.wrap(this_pos)
-                Router.route(this_pid, {:gm, pp})
+
+                case Enum.at(total_pos, this_id - from) do
+                  {this_x, this_y} ->
+                    pp = ["move_city", this_x, this_y]
+                    Router.route(this_pid, {:gm, pp})
+
+                  _ ->
+                    :ok
+                end
             end)
 
             send_resp(conn, 200, "ok")
