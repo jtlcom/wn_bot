@@ -35,6 +35,9 @@ defmodule Client do
         ["42", "193" | _] ->
           "http://42.193.252.182:8008/auth/whynot"
 
+        ["159", "75" | _] ->
+          "http://159.75.204.224:8018/auth/whynot"
+
           # taptap
           # ["159", "75" | _] ->
           #   "http://159.75.177.225:8008/auth/whynot"
