@@ -61,10 +61,11 @@ defmodule Client do
     Process.put(:cmd_dic, id)
     bin = SimpleMsgPack.pack!(msg)
 
-    case is_encrypt? and Process.get(:encrypt_key) do
-      key when is_list(key) -> Xxtea.encrypt(bin, key)
-      _ -> bin |> IO.iodata_to_binary()
-    end
+    bin =
+      case is_encrypt? and Process.get(:encrypt_key) do
+        key when is_list(key) -> Xxtea.encrypt(bin, key)
+        _ -> bin |> IO.iodata_to_binary()
+      end
 
     # bin = :erlang.term_to_binary(msg)
     bin1 = <<id::unsigned-integer-size(32), bin::binary>>
