@@ -107,6 +107,7 @@ defmodule Avatar do
       error ->
         Logger.warning("avatar login failed, error:#{error}, state:#{inspect(player)}")
         Process.send_after(self(), :login, 1000)
+        Process.put(:cmd_dic, -1)
         {:noreply, player}
     end
   end
@@ -719,6 +720,7 @@ defmodule Avatar do
          } = player
        ) do
     Client.tcp_close(conn)
+    Process.put(:cmd_dic, -1)
     login_finish && MsgCounter.res_onlines_sub()
 
     case Client.tcp_connect(server_ip, server_port) do
