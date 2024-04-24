@@ -54,12 +54,18 @@ defmodule Client do
     )
   end
 
-  def send_msg(conn, msg) do
+  def send_msg(conn, msg, is_encrypt? \\ true) do
     # Process.sleep(50)
     # t1 = Utils.timestamp(:ms)
     id = Process.get(:cmd_dic, -1) + 1
     Process.put(:cmd_dic, id)
-    bin = SimpleMsgPack.pack!(msg) |> IO.iodata_to_binary()
+    bin = SimpleMsgPack.pack!(msg)
+
+    case is_encrypt? and Process.get(:encrypt_key) do
+      key when is_list(key) -> Xxtea.encrypt(bin, key)
+      _ -> bin
+    end
+
     # bin = :erlang.term_to_binary(msg)
     bin1 = <<id::unsigned-integer-size(32), bin::binary>>
     # Logger.info fn -> "bin1 is #{inspect(bin1)}" end

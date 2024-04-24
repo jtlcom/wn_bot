@@ -70,10 +70,11 @@ defmodule Avatar do
             Guid.register(self(), name)
             Process.put(:account, name)
             Process.put(:last_op_ts, Utils.timestamp())
+            Process.put(:encrypt_key, encrypt_key(token))
 
             case Client.tcp_connect(server_ip, server_port) do
               {:ok, conn} ->
-                Client.send_msg(conn, ["login", name, 0, token, claim, false])
+                Client.send_msg(conn, ["login", name, 0, token, claim, false], false)
                 end_time = Utils.timestamp(:ms)
 
                 Logger.info("log conn: #{inspect(conn)},   robot: #{name},
@@ -173,7 +174,7 @@ defmodule Avatar do
 
           case Client.tcp_connect(server_ip, server_port) do
             {:ok, conn} ->
-              Client.send_msg(conn, ["login", name, aid, token, claim, true])
+              Client.send_msg(conn, ["login", name, aid, token, claim, true], false)
               now = Utils.timestamp()
               Process.put(:last_op_ts, now)
               new_ref = Process.send_after(self(), :loop, 1000)
@@ -725,7 +726,7 @@ defmodule Avatar do
 
     case Client.tcp_connect(server_ip, server_port) do
       {:ok, new_conn} ->
-        Client.send_msg(new_conn, ["login", name, aid, token, claim, true])
+        Client.send_msg(new_conn, ["login", name, aid, token, claim, true], false)
         is_reference(prev_ref) and Process.cancel_timer(prev_ref)
         # new_ref = Process.send_after(self(), :loop, 1000)
         new_player = struct(player, %{conn: new_conn, login_finish: false})
@@ -737,4 +738,7 @@ defmodule Avatar do
   end
 
   defp reconnect(_), do: :error
+
+  defp encrypt_key(token),
+    do: Base.decode64!(token) |> binary_part(0, 16) |> :erlang.binary_to_list()
 end
