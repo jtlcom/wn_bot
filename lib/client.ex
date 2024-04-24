@@ -63,7 +63,7 @@ defmodule Client do
 
     case is_encrypt? and Process.get(:encrypt_key) do
       key when is_list(key) -> Xxtea.encrypt(bin, key)
-      _ -> bin
+      _ -> bin |> IO.iodata_to_binary()
     end
 
     # bin = :erlang.term_to_binary(msg)
