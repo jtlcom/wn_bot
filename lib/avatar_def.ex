@@ -22,5 +22,6 @@ defmodule AvatarDef do
             AI: false,
             system_mails: %{},
             group_mails: %{},
-            login_finish: false
+            login_finish: false,
+            reconnect_times: 0
 end

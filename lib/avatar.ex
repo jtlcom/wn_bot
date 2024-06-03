@@ -307,7 +307,7 @@ defmodule Avatar do
       {:ok, new_player} ->
         {:noreply, new_player}
 
-      {:failed, new_player} ->
+      {:failed, %AvatarDef{reconnect_times: r_times} = new_player} when r_times < 100 ->
         Process.sleep(1000)
         handle_info({:tcp_closed, nil}, new_player)
 
@@ -323,7 +323,7 @@ defmodule Avatar do
       {:ok, new_player} ->
         {:noreply, new_player}
 
-      {:failed, new_player} ->
+      {:failed, %AvatarDef{reconnect_times: r_times} = new_player} when r_times < 100 ->
         Process.sleep(1000)
         handle_info({:tcp_error, nil, reason}, new_player)
 
@@ -717,7 +717,8 @@ defmodule Avatar do
            token: token,
            claim: claim,
            loop_ref: prev_ref,
-           login_finish: login_finish
+           login_finish: login_finish,
+           reconnect_times: r_times
          } = player
        ) do
     Client.tcp_close(conn)
@@ -729,11 +730,11 @@ defmodule Avatar do
         Client.send_msg(new_conn, ["login", name, aid, token, claim, true], false)
         is_reference(prev_ref) and Process.cancel_timer(prev_ref)
         # new_ref = Process.send_after(self(), :loop, 1000)
-        new_player = struct(player, %{conn: new_conn, login_finish: false})
+        new_player = struct(player, %{conn: new_conn, login_finish: false, reconnect_times: 0})
         {:ok, new_player}
 
       _ ->
-        {:failed, struct(player, %{conn: nil, login_finish: false})}
+        {:failed, struct(player, %{conn: nil, login_finish: false, reconnect_times: r_times + 1})}
     end
   end
 
