@@ -128,7 +128,7 @@ defmodule Avatar do
         } = player
       ) do
     last_ts = Process.get(:last_op_ts, 0)
-    # Client.send_msg(conn, ["ping", 1])
+    Client.send_msg(conn, ["ping", 1])
 
     new_player =
       cond do
