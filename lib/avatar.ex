@@ -124,11 +124,13 @@ defmodule Avatar do
           server_ip: server_ip,
           server_port: server_port,
           token: token,
+          loop_ref: _,
           claim: claim
         } = player
       ) do
     last_ts = Process.get(:last_op_ts, 0)
     Client.send_msg(conn, ["ping", 1])
+    player = struct(player, %{loop_ref: nil})
 
     new_player =
       cond do
@@ -729,6 +731,7 @@ defmodule Avatar do
       {:ok, new_conn} ->
         Client.send_msg(new_conn, ["login", name, aid, token, claim, true], false)
         is_reference(prev_ref) and Process.cancel_timer(prev_ref)
+        # 等收到login再进行loop
         # new_ref = Process.send_after(self(), :loop, 1000)
         new_player = struct(player, %{conn: new_conn, login_finish: false, reconnect_times: 0})
         {:ok, new_player}
