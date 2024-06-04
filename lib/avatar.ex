@@ -150,7 +150,7 @@ defmodule Avatar do
             {now_ms, params} when is_list(params) ->
               new_params = Avatar.trans_params(params, player)
 
-              Logger.info("op_index: #{op_index}, new_params: #{inspect(new_params)}")
+              Logger.debug("op_index: #{op_index}, new_params: #{inspect(new_params)}")
               Client.send_msg(conn, new_params)
               Process.put(:op_index, op_index + 1)
 

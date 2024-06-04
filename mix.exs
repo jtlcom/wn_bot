@@ -16,7 +16,7 @@ defmodule WhynotBot.MixProject do
     [
       applications: applications(Mix.env()),
       mod: {Main, []},
-      included_applications: [:logger_file_backend]
+      included_applications: included_applications(:os.type())
     ]
   end
 
@@ -32,6 +32,14 @@ defmodule WhynotBot.MixProject do
       :httpoison,
       :plug_cowboy
     ]
+  end
+
+  def included_applications({:win32, _}) do
+    [:logger_file_backend, :observer, :wx, :runtime_tools]
+  end
+
+  def included_applications(_) do
+    [:logger_file_backend]
   end
 
   # Run "mix help deps" to learn about dependencies.
