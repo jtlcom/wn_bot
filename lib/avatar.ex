@@ -114,7 +114,7 @@ defmodule Avatar do
   end
 
   def handle_info(
-        :loop,
+        {:loop, conn},
         %AvatarDef{
           id: aid,
           conn: conn,
@@ -141,8 +141,7 @@ defmodule Avatar do
           Client.send_msg(conn, ["gm", "init_bot"])
           Process.sleep(500)
           Client.send_msg(conn, ["gm", "god_func"])
-          new_ref = Process.send_after(self(), :loop, 1000)
-          struct(player, %{loop_ref: new_ref})
+          set_loop(player, 1000)
 
         ai == 1 ->
           op_index = Process.get(:op_index, 0)
@@ -158,17 +157,14 @@ defmodule Avatar do
 
               case Enum.at(op_list, op_index + 1) do
                 {new_ms, params} when is_list(params) ->
-                  new_ref = Process.send_after(self(), :loop, new_ms - now_ms)
-                  struct(player, %{loop_ref: new_ref})
+                  set_loop(player, new_ms - now_ms)
 
                 _ ->
-                  new_ref = Process.send_after(self(), :loop, 5000)
-                  struct(player, %{AI: true, loop_ref: new_ref})
+                  set_loop(player) |> struct(AI: true)
               end
 
             _ ->
-              new_ref = Process.send_after(self(), :loop, 5000)
-              struct(player, %{AI: true, loop_ref: new_ref})
+              set_loop(player) |> struct(AI: true)
           end
 
         ai == 2 ->
@@ -179,13 +175,12 @@ defmodule Avatar do
               Client.send_msg(conn, ["login", name, aid, token, claim, true], false)
               now = Utils.timestamp()
               Process.put(:last_op_ts, now)
-              new_ref = Process.send_after(self(), :loop, 1000)
-              struct(player, %{conn: conn, loop_ref: new_ref})
+
+              player |> struct(conn: conn) |> set_loop(1000)
 
             _ ->
               Logger.warning("tcp_connect failed")
-              new_ref = Process.send_after(self(), :loop, 1000)
-              struct(player, %{loop_ref: new_ref})
+              player |> set_loop(1000)
           end
 
         ai and trunc(Utils.timestamp() - last_ts) >= 5 ->
@@ -202,12 +197,10 @@ defmodule Avatar do
 
           now = Utils.timestamp()
           Process.put(:last_op_ts, now)
-          new_ref = Process.send_after(self(), :loop, 5000)
-          struct(new_player, %{loop_ref: new_ref})
+          new_player |> set_loop()
 
         true ->
-          new_ref = Process.send_after(self(), :loop, 5000)
-          struct(player, %{loop_ref: new_ref})
+          player |> set_loop()
       end
 
     {:noreply, new_player}
@@ -271,8 +264,7 @@ defmodule Avatar do
             Process.put(:svr_aid, new_player.id)
             Avatar.Ets.insert(account, %{pid: self(), aid: new_player.id})
             MsgCounter.res_onlines_add()
-            new_ref = Process.send_after(self(), :loop, 5000)
-            new_player = struct(new_player, %{loop_ref: new_ref, login_finish: true})
+            new_player |> set_loop() |> struct(login_finish: true)
             {:noreply, new_player}
 
           _ ->
@@ -339,8 +331,8 @@ defmodule Avatar do
     {:stop, {:shutdown, :tcp_timeout}, player}
   end
 
-  def handle_info(_msg, player) do
-    # Logger.info "what msg #{inspect msg}"
+  def handle_info(msg, player) do
+    Logger.info("what msg #{inspect(msg)}, player:#{inspect(player)}")
     {:noreply, player}
   end
 
@@ -723,6 +715,7 @@ defmodule Avatar do
            reconnect_times: r_times
          } = player
        ) do
+    is_reference(prev_ref) and Process.cancel_timer(prev_ref)
     Client.tcp_close(conn)
     Process.put(:cmd_dic, -1)
     login_finish && MsgCounter.res_onlines_sub()
@@ -730,9 +723,6 @@ defmodule Avatar do
     case Client.tcp_connect(server_ip, server_port) do
       {:ok, new_conn} ->
         Client.send_msg(new_conn, ["login", name, aid, token, claim, true], false)
-        is_reference(prev_ref) and Process.cancel_timer(prev_ref)
-        # 等收到login再进行loop
-        # new_ref = Process.send_after(self(), :loop, 1000)
         new_player = struct(player, %{conn: new_conn, login_finish: false, reconnect_times: 0})
         {:ok, new_player}
 
@@ -745,4 +735,10 @@ defmodule Avatar do
 
   defp encrypt_key(token),
     do: Base.decode64!(token) |> binary_part(0, 16) |> :erlang.binary_to_list()
+
+  defp set_loop(%AvatarDef{id: aid, conn: conn, loop_ref: loop_ref} = player, interval \\ 5000) do
+    is_reference(loop_ref) && Process.cancel_timer(loop_ref)
+    new_ref = Process.send_after(self(), {:loop, conn}, max(interval, 10))
+    struct(player, %{loop_ref: new_ref})
+  end
 end
