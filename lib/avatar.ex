@@ -288,7 +288,7 @@ defmodule Avatar do
             Process.put(:svr_aid, new_player.id)
             Avatar.Ets.insert(account, %{pid: self(), aid: new_player.id})
             MsgCounter.res_onlines_add()
-            new_player |> set_loop() |> struct(login_finish: true)
+            new_player = new_player |> set_loop() |> struct(login_finish: true)
             {:noreply, new_player}
 
           _ ->
