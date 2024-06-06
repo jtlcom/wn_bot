@@ -8,6 +8,7 @@ defmodule AvatarDef do
             token: "",
             claim: "",
             loop_ref: nil,
+            ping_loop_ref: nil,
             buildings: %{},
             city_pos: nil,
             gid: 0,

@@ -55,7 +55,8 @@ defmodule Avatar do
         %AvatarDef{
           account: name,
           server_ip: server_ip,
-          server_port: server_port
+          server_port: server_port,
+          AI: ai
         } = player
       ) do
     begin_time = Utils.timestamp(:ms)
@@ -75,6 +76,16 @@ defmodule Avatar do
             case Client.tcp_connect(server_ip, server_port) do
               {:ok, conn} ->
                 Client.send_msg(conn, ["login", name, 0, token, claim, false], false)
+
+                player = struct(player, %{conn: conn, token: token, claim: claim})
+
+                new_player =
+                  if ai != 2 do
+                    set_ping_loop(player)
+                  else
+                    player
+                  end
+
                 end_time = Utils.timestamp(:ms)
 
                 Logger.info("log conn: #{inspect(conn)},   robot: #{name},
@@ -88,7 +99,7 @@ defmodule Avatar do
                   connect: end_time - start_time
                 })
 
-                {:ok, struct(player, %{conn: conn, token: token, claim: claim})}
+                {:ok, new_player}
 
               _ ->
                 :error3
@@ -113,6 +124,11 @@ defmodule Avatar do
     end
   end
 
+  def handle_info({:ping_loop, conn}, %AvatarDef{conn: conn} = player) do
+    Client.send_msg(conn, ["ping", 1])
+    {:noreply, set_ping_loop(player |> struct(ping_loop_ref: nil))}
+  end
+
   def handle_info(
         {:loop, conn},
         %AvatarDef{
@@ -129,7 +145,6 @@ defmodule Avatar do
         } = player
       ) do
     last_ts = Process.get(:last_op_ts, 0)
-    Client.send_msg(conn, ["ping", 1])
     player = struct(player, %{loop_ref: nil})
 
     new_player =
@@ -145,17 +160,19 @@ defmodule Avatar do
 
         ai == 1 ->
           op_index = Process.get(:op_index, 0)
-          op_list = OpList.list(1)
 
-          case Enum.at(op_list, op_index) do
+          case OpList.get(op_index) do
             {now_ms, params} when is_list(params) ->
               new_params = Avatar.trans_params(params, player)
 
-              Logger.debug("op_index: #{op_index}, new_params: #{inspect(new_params)}")
+              Logger.debug(
+                "op aid:#{aid}, op_index: #{op_index}, new_params: #{inspect(new_params)}"
+              )
+
               Client.send_msg(conn, new_params)
               Process.put(:op_index, op_index + 1)
 
-              case Enum.at(op_list, op_index + 1) do
+              case OpList.get(op_index + 1) do
                 {new_ms, params} when is_list(params) ->
                   set_loop(player, new_ms - now_ms)
 
@@ -204,6 +221,13 @@ defmodule Avatar do
       end
 
     {:noreply, new_player}
+  rescue
+    error ->
+      Logger.warning(
+        "loop failed, aid:#{aid}, error:#{inspect(error)}, stacktrace:#{inspect(__STACKTRACE__)}"
+      )
+
+      {:noreply, player |> set_loop()}
   end
 
   def handle_info(
@@ -294,8 +318,7 @@ defmodule Avatar do
   end
 
   def handle_info({:tcp_closed, socket}, player) do
-    socket != nil && Logger.error("tcp closed!")
-    socket != nil && Logger.info("tcp closed: socket: #{inspect(socket)}")
+    Logger.info("tcp closed, socket:#{inspect(socket)}, player:#{inspect(player)}")
 
     case reconnect(player) do
       {:ok, new_player} ->
@@ -311,7 +334,9 @@ defmodule Avatar do
   end
 
   def handle_info({:tcp_error, socket, reason}, player) do
-    socket != nil && Logger.error("tcp error!")
+    Logger.info(
+      "tcp error, socket:#{inspect(socket)}, reason:#{inspect(reason)}, player:#{inspect(player)}"
+    )
 
     case reconnect(player) do
       {:ok, new_player} ->
@@ -327,7 +352,7 @@ defmodule Avatar do
   end
 
   def handle_info(:timeout, player) do
-    Logger.info("conn time out!")
+    Logger.info("conn time out!, player:#{inspect(player)}")
     {:stop, {:shutdown, :tcp_timeout}, player}
   end
 
@@ -521,22 +546,19 @@ defmodule Avatar do
 
   # -------------------------------------------------------------------------------
 
-  def terminate(:normal, %{conn: conn, login_finish: login_finish} = _player) do
-    Logger.info("avatar ternimate")
+  def terminate(:normal, %{conn: conn, login_finish: login_finish} = player) do
+    Logger.info("avatar ternimate, player:#{inspect(player)}")
     login_finish && MsgCounter.res_onlines_sub()
     Client.tcp_close(conn)
   end
 
   def terminate({:shutdown, reason}, %AvatarDef{conn: conn} = player) do
-    Logger.info(
-      "terminate no normal, id is #{player.id}, reason is #{inspect(reason)}, data is #{inspect(player)}"
-    )
-
+    Logger.info("terminate shutdown, reason:#{inspect(reason)}, player:#{inspect(player)}")
     Client.tcp_close(conn)
   end
 
-  def terminate(reason, %AvatarDef{conn: conn, login_finish: login_finish} = _player) do
-    Logger.info("avatar ternimate, reason:#{reason}")
+  def terminate(reason, %AvatarDef{conn: conn, login_finish: login_finish} = player) do
+    Logger.info("avatar ternimate, reason:#{reason}, player:#{inspect(player)}")
     login_finish && MsgCounter.res_onlines_sub()
     Client.tcp_close(conn)
   end
@@ -711,11 +733,13 @@ defmodule Avatar do
            token: token,
            claim: claim,
            loop_ref: prev_ref,
+           ping_loop_ref: ping_loop_ref,
            login_finish: login_finish,
            reconnect_times: r_times
          } = player
        ) do
     is_reference(prev_ref) and Process.cancel_timer(prev_ref)
+    is_reference(ping_loop_ref) and Process.cancel_timer(ping_loop_ref)
     Client.tcp_close(conn)
     Process.put(:cmd_dic, -1)
     login_finish && MsgCounter.res_onlines_sub()
@@ -723,7 +747,13 @@ defmodule Avatar do
     case Client.tcp_connect(server_ip, server_port) do
       {:ok, new_conn} ->
         Client.send_msg(new_conn, ["login", name, aid, token, claim, true], false)
-        new_player = struct(player, %{conn: new_conn, login_finish: false, reconnect_times: 0})
+
+        new_player =
+          player
+          |> struct(loop_ref: nil, ping_loop_ref: nil)
+          |> set_ping_loop()
+          |> struct(%{conn: new_conn, login_finish: false, reconnect_times: 0})
+
         {:ok, new_player}
 
       _ ->
@@ -736,9 +766,15 @@ defmodule Avatar do
   defp encrypt_key(token),
     do: Base.decode64!(token) |> binary_part(0, 16) |> :erlang.binary_to_list()
 
-  defp set_loop(%AvatarDef{id: aid, conn: conn, loop_ref: loop_ref} = player, interval \\ 5000) do
+  defp set_loop(%AvatarDef{conn: conn, loop_ref: loop_ref} = player, interval \\ 5000) do
     is_reference(loop_ref) && Process.cancel_timer(loop_ref)
     new_ref = Process.send_after(self(), {:loop, conn}, max(interval, 10))
     struct(player, %{loop_ref: new_ref})
+  end
+
+  defp set_ping_loop(%AvatarDef{conn: conn, ping_loop_ref: ping_loop_ref} = player) do
+    is_reference(ping_loop_ref) && Process.cancel_timer(ping_loop_ref)
+    new_ref = Process.send_after(self(), {:ping_loop, conn}, 3000)
+    struct(player, %{ping_loop_ref: new_ref})
   end
 end

@@ -133,7 +133,7 @@ defmodule AvatarEvent do
   def handle_event(other, player) do
     case other do
       [head | _] ->
-        Logger.debug("#{player.account} other_head : #{inspect(head, pretty: true)}!")
+        # Logger.debug("#{player.account} other_head : #{inspect(head, pretty: true)}!")
         player
 
       _ ->
