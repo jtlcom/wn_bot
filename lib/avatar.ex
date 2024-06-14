@@ -151,6 +151,7 @@ defmodule Avatar do
       cond do
         Process.get(:new, false) ->
           Process.put(:new, false)
+          Client.send_msg(conn, ["data:get", ["heros"]])
           Client.send_msg(conn, ["gm", "god"])
           Process.sleep(500)
           Client.send_msg(conn, ["gm", "init_bot"])
@@ -285,6 +286,7 @@ defmodule Avatar do
             Client.send_msg(conn, ["login_done"])
             Client.send_msg(conn, ["see", city_pos, 1, 7])
             Client.send_msg(conn, ["mail:list", "system", 0])
+            Client.send_msg(conn, ["data:get", ["heros"]])
             Process.put(:svr_aid, new_player.id)
             Avatar.Ets.insert(account, %{pid: self(), aid: new_player.id})
             MsgCounter.res_onlines_add()
