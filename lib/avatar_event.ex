@@ -130,14 +130,7 @@ defmodule AvatarEvent do
     struct(player, %{system_mails: new_sys_mails})
   end
 
-  def handle_event(other, player) do
-    case other do
-      [head | _] ->
-        # Logger.debug("#{player.account} other_head : #{inspect(head, pretty: true)}!")
-        player
-
-      _ ->
-        player
-    end
+  def handle_event(_other, player) do
+    player
   end
 end

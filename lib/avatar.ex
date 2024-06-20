@@ -232,17 +232,17 @@ defmodule Avatar do
   end
 
   def handle_info(
-        {:tcp, socket, data},
-        %AvatarDef{id: id, account: account, gid: gid, conn: conn} = player
+        {:tcp, _socket, data},
+        %AvatarDef{id: _id, account: account, gid: gid, conn: conn} = player
       ) do
     decoded = SimpleMsgPack.unpack!(data)
-    Logger.debug("recvd message------------------------------------------------:
-    \t\t avatar: \t #{id}
-    \t\t account: \t #{account}
-    \t\t from_ip: \t #{inspect(client_ip(socket))}
-    \t\t time: \t #{inspect(:calendar.local_time())}
-    \t\t msg: \t #{inspect(decoded, pretty: true, limit: :infinity)}
-    ")
+    # Logger.debug("recvd message------------------------------------------------:
+    # \t\t avatar: \t #{id}
+    # \t\t account: \t #{account}
+    # \t\t from_ip: \t #{inspect(client_ip(socket))}
+    # \t\t time: \t #{inspect(:calendar.local_time())}
+    # \t\t msg: \t #{inspect(decoded, pretty: true, limit: :infinity)}
+    # ")
 
     case decoded do
       ["stop", "server closed"] ->
@@ -371,9 +371,9 @@ defmodule Avatar do
     troop_guid = player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.min()
     pos = analyze_verse(player, :attack)
     Client.send_msg(player.conn, ["op", "forward", [troop_guid, pos]])
-    IO.puts("atk atk atk atk atk}")
-    IO.puts("troop_guid: #{inspect(troop_guid)}}")
-    IO.puts("pos: #{inspect(pos)}}")
+    # IO.puts("atk atk atk atk atk}")
+    # IO.puts("troop_guid: #{inspect(troop_guid)}}")
+    # IO.puts("pos: #{inspect(pos)}}")
     {:noreply, player}
   end
 
@@ -389,8 +389,8 @@ defmodule Avatar do
 
     pos = [x, y]
     Client.send_msg(player.conn, ["op", "forward", [troop_guid, pos]])
-    IO.puts("troop_guid: #{inspect(troop_guid)}}")
-    IO.puts("pos: #{inspect(pos)}}")
+    # IO.puts("troop_guid: #{inspect(troop_guid)}}")
+    # IO.puts("pos: #{inspect(pos)}}")
     {:noreply, player}
   end
 
@@ -402,7 +402,7 @@ defmodule Avatar do
     Client.send_msg(player.conn, ["tile_detail", pos])
     Process.sleep(500)
     Client.send_msg(player.conn, ["op", "attack", [troop_guid, pos, times, is_back?]])
-    IO.puts("troop_guid: #{inspect(troop_guid)}}")
+    # IO.puts("troop_guid: #{inspect(troop_guid)}}")
     {:noreply, player}
   end
 
@@ -412,7 +412,7 @@ defmodule Avatar do
 
     pos = [x, y]
     Client.send_msg(player.conn, ["op", "join_summon", [troop_guid, pos, is_main_team]])
-    IO.puts("troop_guid: #{inspect(troop_guid)}}")
+    # IO.puts("troop_guid: #{inspect(troop_guid)}}")
     {:noreply, player}
   end
 
@@ -421,7 +421,7 @@ defmodule Avatar do
       player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.sort() |> Enum.at(troop_index - 1)
 
     Client.send_msg(player.conn, ["op", "stop", [troop_guid]])
-    IO.puts("troop_guid: #{inspect(troop_guid)}}")
+    # IO.puts("troop_guid: #{inspect(troop_guid)}}")
     {:noreply, player}
   end
 
@@ -431,7 +431,7 @@ defmodule Avatar do
 
     pos = [x, y]
     Client.send_msg(player.conn, ["op", "defend", [troop_guid, pos]])
-    IO.puts("troop_guid: #{inspect(troop_guid)}}")
+    # IO.puts("troop_guid: #{inspect(troop_guid)}}")
     {:noreply, player}
   end
 
@@ -440,7 +440,7 @@ defmodule Avatar do
       player |> Map.get(:troops, %{}) |> Map.keys() |> Enum.sort() |> Enum.at(troop_index - 1)
 
     Client.send_msg(player.conn, ["op", "back", [troop_guid]])
-    IO.puts("troop_guid: #{inspect(troop_guid)}}")
+    # IO.puts("troop_guid: #{inspect(troop_guid)}}")
     {:noreply, player}
   end
 
@@ -452,7 +452,7 @@ defmodule Avatar do
     |> case do
       {this_pos, _this_data} ->
         Client.send_msg(player.conn, ["op", "build", [this_pos, build_id, "营帐"]])
-        IO.puts("pos: #{inspect(this_pos)}")
+        # IO.puts("pos: #{inspect(this_pos)}")
         {:noreply, player}
 
       _ ->
@@ -467,14 +467,14 @@ defmodule Avatar do
   end
 
   def handle_cast({:gm, params}, player) do
-    IO.puts("#{player.account}: params: #{inspect(params)}}")
+    # IO.puts("#{player.account}: params: #{inspect(params)}}")
     Client.send_msg(player.conn, ["gm"] ++ params)
     {:noreply, player}
   end
 
   def handle_cast({:gacha, num}, player) do
     Client.send_msg(player.conn, ["hero:gacha", 1, num])
-    IO.puts("gacha gacha gacha gacha gacha}")
+    # IO.puts("gacha gacha gacha gacha gacha}")
     {:noreply, player}
   end
 

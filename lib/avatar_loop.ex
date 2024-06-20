@@ -114,11 +114,7 @@ defmodule AvatarLoop do
             Client.send_msg(conn, ["chat:send", 1, 1, msg, "{}"])
 
           result == :gacha ->
-            Client.send_msg(conn, ["gacha:gacha", 1, 5, 1])
-            Process.sleep(1000)
-            Client.send_msg(conn, ["gacha:gacha", 1, 5, 1])
-            Process.sleep(1000)
-            Client.send_msg(conn, ["gacha:gacha", 1, 5, 1])
+            Client.send_msg(conn, ["gacha:gacha", 1, 1, 1])
 
           result == :mail ->
             max_mail_id = (system_mails != %{} && system_mails |> Map.keys() |> Enum.max()) || 0
