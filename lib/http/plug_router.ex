@@ -82,9 +82,10 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
           {%{
              "gid_1" => g1_nums,
              "gid_2" => g2_nums,
-             "gid_3" => g3_nums
+             "gid_3" => g3_nums,
+             "gid_4" => g4_nums
            }, %{ip: ip, port: port, login_prefix: login_prefix, AI: ai}} ->
-            %{1 => g1_nums, 2 => g2_nums, 3 => g3_nums}
+            %{1 => g1_nums, 2 => g2_nums, 3 => g3_nums, 4 => g4_nums}
             |> Enum.each(fn
               {this_gid, this_nums} when is_integer(this_nums) and this_nums > 0 ->
                 Logger.info("this_gid: #{this_gid}, this_nums: #{this_nums},")
