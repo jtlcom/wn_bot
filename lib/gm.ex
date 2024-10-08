@@ -1,5 +1,4 @@
 defmodule Gm do
-  @spec gm(String.t(), integer, integer, list()) :: :ok
   def gm(name_prefix, from_id, to_id, params) do
     Enum.each(from_id..to_id, fn this_id ->
       account = name_prefix <> "#{this_id}"

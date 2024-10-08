@@ -79,21 +79,22 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
         )
 
         case {body, http_info} do
-          {%{
-             "gid_1" => g1_nums,
-             "gid_2" => g2_nums,
-             "gid_3" => g3_nums,
-             "gid_4" => g4_nums
-           }, %{ip: ip, port: port, login_prefix: login_prefix, AI: ai}} ->
-            %{1 => g1_nums, 2 => g2_nums, 3 => g3_nums, 4 => g4_nums}
+          {body, %{ip: ip, port: port, login_prefix: login_prefix, AI: ai}} ->
+            body
             |> Enum.each(fn
-              {this_gid, this_nums} when is_integer(this_nums) and this_nums > 0 ->
-                Logger.info("this_gid: #{this_gid}, this_nums: #{this_nums},")
+              {this_gid_name, this_nums} when is_integer(this_nums) and this_nums > 0 ->
+                try do
+                  "gid_" <> this_gid = this_gid_name
+                  this_gid = this_gid |> String.to_integer()
+                  Logger.info("this_gid: #{this_gid}, this_nums: #{this_nums}")
 
-                HttpMgr.cast(
-                  {:apply, StartPressure, :go,
-                   [ip, port, login_prefix, this_gid, 1, this_nums, ai]}
-                )
+                  HttpMgr.cast(
+                    {:apply, StartPressure, :go,
+                     [ip, port, login_prefix, this_gid, 1, this_nums, ai]}
+                  )
+                rescue
+                  _ -> Logger.error("/login, this_gid_name: #{inspect(this_gid_name)}")
+                end
 
               _ ->
                 nil
