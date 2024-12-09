@@ -13,6 +13,7 @@ config :whynot_bot, http_port: 9999
 
 config :whynot_bot, recv_buff: 10
 
+config :tzdata, autoupdate: :disabled
 config :logger, handle_otp_reports: true, handle_sasl_reports: true
 config :logger, backends: [:console, {LoggerFileBackend, :log_file}]
 

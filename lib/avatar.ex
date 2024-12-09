@@ -1,34 +1,40 @@
-defmodule Avatar.Supervisor do
-  use Supervisor
-  @name Avatars
+defmodule Avatars do
+  require Logger
+  @name Avatar.DynamicSupervisors
 
-  def start_link() do
-    Supervisor.start_link(__MODULE__, [], name: @name)
+  def start_child({_server_ip, _server_port, account, _gid, _ai} = args, opts \\ []) do
+    case DynamicSupervisor.start_child(
+           {:via, PartitionSupervisor, {@name, Guid.name(account)}},
+           {Avatar, {args, opts}}
+         ) do
+      {:ok, _} ->
+        :ok
+
+      error ->
+        Logger.error(
+          "#{__MODULE__} start_child failed, account:#{account}, args:#{inspect(args)}, error:#{inspect(error)}"
+        )
+
+        :failed
+    end
   end
 
-  def start_child(args, opts \\ []) do
-    Supervisor.start_child(@name, [args, opts])
-  end
-
-  def init([]) do
-    children = [worker(Avatar, [], restart: :temporary)]
-    supervise(children, strategy: :simple_one_for_one)
+  def stop() do
+    DynamicSupervisor.which_children(@name)
+    |> Enum.each(&Supervisor.terminate_child(@name, elem(&1, 0)))
   end
 
   def broadcast(msg) do
-    Supervisor.which_children(@name)
-    |> Enum.each(fn {_name, pid, type, _modules} = _child ->
-      (type == :worker && GenServer.cast(pid, msg)) || :ok
-    end)
+    Utils.broadcast_children(@name, msg)
   end
 end
 
 defmodule Avatar do
-  use GenServer
+  use GenServer, restart: :transient
   require Logger
   require Utils
 
-  def start_link(args, opts \\ []) do
+  def start_link({args, opts}) do
     GenServer.start_link(__MODULE__, args, opts)
   end
 
@@ -38,6 +44,7 @@ defmodule Avatar do
     )
 
     Process.send_after(self(), :login, 1000)
+    Process.flag(:trap_exit, true)
 
     {:ok,
      %AvatarDef{
@@ -145,7 +152,7 @@ defmodule Avatar do
         } = player
       ) do
     last_ts = Process.get(:last_op_ts, 0)
-    player = struct(player, %{loop_ref: nil})
+    player = struct(player, %{loop_ref: nil}) |> topics_subscribe()
 
     new_player =
       cond do
@@ -356,6 +363,10 @@ defmodule Avatar do
   def handle_info(:timeout, player) do
     Logger.info("conn time out!, player:#{inspect(player)}")
     {:stop, {:shutdown, :tcp_timeout}, player}
+  end
+
+  def handle_info({:mqtt_client, _, _}, player) do
+    {:noreply, player}
   end
 
   def handle_info(msg, player) do
@@ -778,5 +789,88 @@ defmodule Avatar do
     is_reference(ping_loop_ref) && Process.cancel_timer(ping_loop_ref)
     new_ref = Process.send_after(self(), {:ping_loop, conn}, 3000)
     struct(player, %{ping_loop_ref: new_ref})
+  end
+
+  defp mqtt_connect(%AvatarDef{
+         chat_data: %{
+           "port" => port,
+           "ip" => ip,
+           "password" => password,
+           "client_id" => client_id
+         }
+       }) do
+    opt = %{
+      client_id: client_id,
+      username: client_id,
+      password: password,
+      transport: {:tcp, %{host: ip, port: port}}
+    }
+
+    case MQTT.Client.connect(opt) do
+      {:ok, conn_pid, _} ->
+        Process.put(:mqtt_conn, conn_pid)
+        {:ok, conn_pid}
+
+      error ->
+        Logger.warning(
+          "#{__MODULE__} connect failed, error:#{inspect(error)}, opt:#{inspect(opt)}"
+        )
+
+        :failed
+    end
+  end
+
+  defp mqtt_connect(_) do
+    :failed
+  end
+
+  defp topics_subscribe(%AvatarDef{chat_data: %{"topics" => topics} = chat_data} = data) do
+    now_time = Utils.timestamp()
+    last_time = Process.put(:mqtt_last_time, now_time)
+
+    if last_time == nil or now_time - last_time > 60 do
+      case Process.get(:mqtt_conn) do
+        nil ->
+          mqtt_connect(data)
+
+        conn_pid when is_pid(conn_pid) ->
+          if Process.alive?(conn_pid) do
+            {:ok, conn_pid}
+          else
+            nil
+          end
+
+        _ ->
+          nil
+      end
+      |> case do
+        {:ok, conn_pid} ->
+          keys =
+            topics
+            |> Enum.flat_map(fn
+              {k, false} -> [k]
+              _ -> []
+            end)
+
+          case MQTT.Client.subscribe(conn_pid, keys) do
+            {:ok, _} ->
+              new_topics = topics |> Map.new(fn {k, _} -> {k, true} end)
+              new_chat_data = Map.put(chat_data, "topics", new_topics)
+              data |> Map.put(:chat_data, new_chat_data)
+
+            _ ->
+              data
+          end
+
+        _ ->
+          data
+      end
+    else
+      data
+    end
+  end
+
+  defp topics_subscribe(data) do
+    data
   end
 end

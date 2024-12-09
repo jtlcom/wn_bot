@@ -34,9 +34,7 @@ defmodule StartPressure do
     if is_nil(gid) do
       Logger.warning("gid error, id: #{id}")
     else
-      Avatar.Supervisor.start_child({server_ip, server_port, account, gid, ai},
-        name: {:global, {:name, Guid.name(account)}}
-      )
+      Avatars.start_child({server_ip, server_port, account, gid, ai})
 
       end_time = Utils.timestamp(:ms)
       Logger.info("login account: #{inspect(account)}, login_used: #{end_time - start_time}")

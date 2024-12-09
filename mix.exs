@@ -7,7 +7,12 @@ defmodule WhynotBot.MixProject do
       version: "0.1.0",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :dev,
-      deps: deps()
+      deps: deps(),
+      releases: [
+        whynot_bot: [
+          steps: [:assemble, :tar]
+        ]
+      ]
     ]
   end
 
@@ -30,7 +35,8 @@ defmodule WhynotBot.MixProject do
       :timex,
       :jason,
       :httpoison,
-      :plug_cowboy
+      :plug_cowboy,
+      :mqtt
     ]
   end
 
@@ -54,7 +60,9 @@ defmodule WhynotBot.MixProject do
        git: "http://wn-server-1:8081/huangbo/changed_reloader", only: :dev, tag: "1.5"},
       {:jason, "~> 1.1"},
       {:httpoison, "~> 1.0"},
-      {:plug_cowboy, "~> 2.0"}
+      {:plug_cowboy, "~> 2.0"},
+      {:mqtt, "~> 0.3.3"},
+      {:msgpax, "~> 2.4"}
     ]
   end
 end

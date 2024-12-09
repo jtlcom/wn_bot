@@ -5,7 +5,7 @@ defmodule Main do
 
   def start(_type, _args) do
     children = [
-      supervisor(Avatar.Supervisor, []),
+      {PartitionSupervisor, child_spec: DynamicSupervisor, name: Avatar.DynamicSupervisors},
       %{id: HttpMgr, start: {HttpMgr, :start_link, [HttpMgr]}}
     ]
 

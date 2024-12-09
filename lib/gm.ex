@@ -8,7 +8,7 @@ defmodule Gm do
   end
 
   def atk() do
-    Realm.broadcast({:atk})
+    Avatars.broadcast({:atk})
   end
 
   def forward(name_prefix, from_id, to_id, x, y, 0) do
@@ -57,6 +57,6 @@ defmodule Gm do
   end
 
   def gacha(num) do
-    Realm.broadcast({:gacha, num})
+    Avatars.broadcast({:gacha, num})
   end
 end

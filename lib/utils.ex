@@ -141,4 +141,31 @@ defmodule Utils do
 
     # Timex.format!(tmx, "%F", :strftime) <> "_" <> (Timex.format!(tmx, "%T", :strftime) |> String.split(":") |> Enum.join())
   end
+
+  @doc """
+  查找DynamicSupervisor的children process并发消息
+  """
+  def broadcast_children({_id, pid, :supervisor, _modules}, msg) do
+    broadcast_children(pid, msg)
+  end
+
+  def broadcast_children({_id, pid, :worker, _modules}, msg) do
+    GenServer.cast(pid, msg)
+  end
+
+  def broadcast_children({_id, _pid, _type, _modules}, _msg) do
+    :ok
+  end
+
+  def broadcast_children([], _msg) do
+    :ok
+  end
+
+  def broadcast_children([_ | _] = list, msg) do
+    list |> Enum.each(&broadcast_children(&1, msg))
+  end
+
+  def broadcast_children(supervisor, msg) do
+    DynamicSupervisor.which_children(supervisor) |> Enum.each(&broadcast_children(&1, msg))
+  end
 end

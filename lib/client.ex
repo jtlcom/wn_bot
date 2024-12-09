@@ -38,6 +38,9 @@ defmodule Client do
         ["159", "75" | _] ->
           "http://159.75.204.224:8018/auth/whynot"
 
+        ["hygd"] ->
+          "https://hygd.game.ruyi.cn/auth/whynot"
+
           # taptap
           # ["159", "75" | _] ->
           #   "http://159.75.177.225:8008/auth/whynot"
@@ -82,13 +85,20 @@ defmodule Client do
         Logger.error("send error is #{inspect(send_error)}")
 
       _ ->
-        aid = Process.get(:svr_aid, 0)
-        Logger.debug("send message------------------------------------------------:
+        case msg do
+          ["ping" | _] ->
+            :ok
+
+          _ ->
+            aid = Process.get(:svr_aid, 0)
+            Logger.debug("send message------------------------------------------------:
         \t\t avatar: \t #{aid}
         \t\t account: \t #{Process.get(:account, nil)}
         \t\t time: \t #{inspect(:calendar.local_time())}
         \t\t msg: \t #{inspect(msg, pretty: true, limit: :infinity)}
         ")
+        end
+
         :ok
     end
   end
