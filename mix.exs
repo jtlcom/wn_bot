@@ -36,12 +36,13 @@ defmodule WhynotBot.MixProject do
       :jason,
       :httpoison,
       :plug_cowboy,
-      :mqtt
+      :mqtt,
+      :msgpax
     ]
   end
 
   def included_applications({:win32, _}) do
-    [:logger_file_backend, :observer, :wx, :runtime_tools]
+    [:logger_file_backend, :observer, :wx]
   end
 
   def included_applications(_) do

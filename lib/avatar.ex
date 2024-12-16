@@ -194,6 +194,7 @@ defmodule Avatar do
 
         ai == 2 ->
           Client.tcp_close(conn)
+          player = mqtt_disconnect(player)
 
           case Client.tcp_connect(server_ip, server_port) do
             {:ok, conn} ->
@@ -571,7 +572,7 @@ defmodule Avatar do
   end
 
   def terminate(reason, %AvatarDef{conn: conn, login_finish: login_finish} = player) do
-    Logger.info("avatar ternimate, reason:#{reason}, player:#{inspect(player)}")
+    Logger.info("avatar ternimate, reason:#{inspect(reason)}, player:#{inspect(player)}")
     login_finish && MsgCounter.res_onlines_sub()
     Client.tcp_close(conn)
   end
@@ -726,15 +727,15 @@ defmodule Avatar do
     end)
   end
 
-  defp client_ip(socket) do
-    case :inet.peername(socket) do
-      {:ok, {client_ip, _port}} ->
-        client_ip
+  # defp client_ip(socket) do
+  #   case :inet.peername(socket) do
+  #     {:ok, {client_ip, _port}} ->
+  #       client_ip
 
-      _ ->
-        ""
-    end
-  end
+  #     _ ->
+  #       ""
+  #   end
+  # end
 
   defp reconnect(
          %AvatarDef{
@@ -751,6 +752,7 @@ defmodule Avatar do
            reconnect_times: r_times
          } = player
        ) do
+    player = mqtt_disconnect(player)
     is_reference(prev_ref) and Process.cancel_timer(prev_ref)
     is_reference(ping_loop_ref) and Process.cancel_timer(ping_loop_ref)
     Client.tcp_close(conn)
@@ -789,6 +791,24 @@ defmodule Avatar do
     is_reference(ping_loop_ref) && Process.cancel_timer(ping_loop_ref)
     new_ref = Process.send_after(self(), {:ping_loop, conn}, 3000)
     struct(player, %{ping_loop_ref: new_ref})
+  end
+
+  defp mqtt_disconnect(%AvatarDef{chat_data: %{"topics" => topics} = chat_data} = data) do
+    case Process.get(:mqtt_conn) do
+      conn_pid when conn_pid != nil -> MQTT.Client.disconnect(conn_pid)
+      _ -> :ok
+    end
+
+    if topics != %{} do
+      new_chat_data = Map.put(chat_data, "topics", %{})
+      data |> Map.put(:chat_data, new_chat_data)
+    else
+      data
+    end
+  end
+
+  defp mqtt_disconnect(data) do
+    data
   end
 
   defp mqtt_connect(%AvatarDef{
