@@ -7,9 +7,10 @@ defmodule PlugRouter do
   plug(:dispatch)
 
   get "/" do
-    data = "
-total_aids: #{inspect(Supervisor.which_children(Avatars) |> length)}
+    data =
+      "total_aids: #{inspect(Avatars.number())}
 onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
+
     send_resp(conn, 200, data)
   end
 
@@ -99,6 +100,9 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
               _ ->
                 nil
             end)
+
+            total_nums = body |> Map.values() |> Enum.sum()
+            SprAdapter.cast({:start, total_nums})
 
             send_resp(conn, 200, "ok")
 

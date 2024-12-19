@@ -26,7 +26,9 @@ defmodule AvatarLoop do
   # 8. 装死15分钟
   # 9. 什么也不做
   # -----------------
-  def loop(%AvatarDef{conn: conn, system_mails: system_mails} = player) do
+  def loop(
+        %AvatarDef{id: aid, conn: conn, system_mails: system_mails, city_pos: city_pos} = player
+      ) do
     cond do
       # city_warnning(player) ->
       #   {:ok, player}
@@ -38,6 +40,9 @@ defmodule AvatarLoop do
         # 随机执行其一
 
         weight = %{
+          see: 30,
+          player_info: 30,
+          tile_detail: 30,
           gm: 10,
           forward: 10,
           attack: 50,
@@ -63,6 +68,23 @@ defmodule AvatarLoop do
           end)
 
         cond do
+          result == :see ->
+            Client.send_msg(conn, ["see", city_pos, 2, 14])
+            Process.sleep(500)
+            Client.send_msg(conn, ["see", city_pos, 1, 8])
+
+          result == :player_info ->
+            Client.send_msg(conn, ["data:player_info", aid])
+
+          result == :tile_detail ->
+            case Avatar.analyze_verse(player, :forward) do
+              [_x, _y] = pos ->
+                Client.send_msg(conn, ["tile_detail", pos])
+
+              _ ->
+                nil
+            end
+
           result == :gm ->
             Client.send_msg(conn, ["gm", "hero_power", 120])
             Client.send_msg(conn, ["gm", "add_hp_pool", 20000])

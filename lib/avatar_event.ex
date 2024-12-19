@@ -173,6 +173,26 @@ defmodule AvatarEvent do
     struct(player, %{chat_data: new_chat_data})
   end
 
+  def handle_event(["gacha:gacha" | _], player) do
+    SprReport.send_report(player, "gacha:gacha")
+  end
+
+  def handle_event(["mail:detail" | _], player) do
+    SprReport.send_report(player, "mail:detail")
+  end
+
+  def handle_event(["mail:read_all" | _], player) do
+    SprReport.send_report(player, "mail:read_all")
+  end
+
+  def handle_event(["op" | _], player) do
+    SprReport.send_report(player, "op")
+  end
+
+  def handle_event(["chat:send" | _], player) do
+    SprReport.send_report(player, "chat:send")
+  end
+
   def handle_event(_other, player) do
     player
   end

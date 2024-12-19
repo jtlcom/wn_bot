@@ -27,6 +27,9 @@ defmodule Avatars do
   def broadcast(msg) do
     Utils.broadcast_children(@name, msg)
   end
+
+  def pid_list(), do: CommonAPI.supervisor_childrens(@name, Avatar)
+  def number(), do: pid_list() |> length
 end
 
 defmodule Avatar do
@@ -141,7 +144,6 @@ defmodule Avatar do
         %AvatarDef{
           id: aid,
           conn: conn,
-          city_pos: city_pos,
           AI: ai,
           account: name,
           server_ip: server_ip,
@@ -202,19 +204,14 @@ defmodule Avatar do
               now = Utils.timestamp()
               Process.put(:last_op_ts, now)
 
-              player |> struct(conn: conn) |> set_loop(1000)
+              player |> struct(conn: conn) |> set_loop(30000)
 
             _ ->
               Logger.warning("tcp_connect failed")
               player |> set_loop(1000)
           end
 
-        ai and trunc(Utils.timestamp() - last_ts) >= 5 ->
-          Client.send_msg(conn, ["see", city_pos, 2, 14])
-          Process.sleep(500)
-          Client.send_msg(conn, ["see", city_pos, 1, 8])
-          Process.sleep(500)
-
+        ai and trunc(Utils.timestamp() - last_ts) >= 15 ->
           new_player =
             case AvatarLoop.loop(player) do
               {:ok, new_player} -> new_player
@@ -241,16 +238,27 @@ defmodule Avatar do
 
   def handle_info(
         {:tcp, _socket, data},
-        %AvatarDef{id: _id, account: account, gid: gid, conn: conn} = player
+        %AvatarDef{id: id, account: account, gid: gid, conn: conn} = player
       ) do
     decoded = SimpleMsgPack.unpack!(data)
-    # Logger.debug("recvd message------------------------------------------------:
-    # \t\t avatar: \t #{id}
-    # \t\t account: \t #{account}
-    # \t\t from_ip: \t #{inspect(client_ip(socket))}
-    # \t\t time: \t #{inspect(:calendar.local_time())}
-    # \t\t msg: \t #{inspect(decoded, pretty: true, limit: :infinity)}
-    # ")
+
+    content = "recvd message------------------------------------------------:
+    \t\t avatar: \t #{id}
+    \t\t account: \t #{account}
+    \t\t time: \t #{inspect(:calendar.local_time())}
+    \t\t msg: \t #{inspect(decoded, pretty: true, limit: :infinity)}\n
+    "
+
+    AvatarLog.new_log(account, content)
+
+    player =
+      case decoded do
+        ["info", ["login:choose_born_state", _id, _params]] ->
+          SprReport.new_report("login:choose_born_state", player)
+
+        _ ->
+          SprReport.new_report("login", player)
+      end
 
     case decoded do
       ["stop", "server closed"] ->
@@ -297,6 +305,8 @@ defmodule Avatar do
             Client.send_msg(conn, ["data:get", ["heros"]])
             Process.put(:svr_aid, new_player.id)
             Avatar.Ets.insert(account, %{pid: self(), aid: new_player.id})
+            Avatar.Ets.insert(new_player.id, self())
+            new_player = SprReport.send_report(new_player, "login")
             MsgCounter.res_onlines_add()
             new_player = new_player |> set_loop() |> struct(login_finish: true)
             {:noreply, new_player}
@@ -375,6 +385,15 @@ defmodule Avatar do
     {:noreply, player}
   end
 
+  def handle_call(:get_data, _from, player) do
+    {:reply, player, player}
+  end
+
+  def handle_cast(:inspect_data, player) do
+    Logger.info("inspect_data: #{inspect(player, pretty: true, limit: :infinity)}")
+    {:noreply, player}
+  end
+
   def handle_cast({:logout}, player) do
     {:stop, :normal, player}
   end
@@ -392,6 +411,7 @@ defmodule Avatar do
   def handle_cast({:apply, type, params}, player) do
     new_params = Avatar.trans_params(List.wrap(params), player)
     Client.send_msg(player.conn, List.wrap(type) ++ new_params)
+    player = SprReport.new_report(type, player)
     {:noreply, player}
   end
 
@@ -414,6 +434,7 @@ defmodule Avatar do
     Client.send_msg(player.conn, ["tile_detail", pos])
     Process.sleep(500)
     Client.send_msg(player.conn, ["op", "attack", [troop_guid, pos, times, is_back?]])
+    player = SprReport.new_report("op", player)
     # IO.puts("troop_guid: #{inspect(troop_guid)}}")
     {:noreply, player}
   end
@@ -700,6 +721,9 @@ defmodule Avatar do
 
       :rand_hero ->
         [heros |> Map.keys() |> Enum.random()]
+
+      :rand_aid ->
+        [(aid - 5)..(aid + 5) |> Enum.random()]
 
       :name ->
         ["BOT#{Enum.random(1..1_000_000)}"]

@@ -25,5 +25,6 @@ defmodule AvatarDef do
             group_mails: %{},
             login_finish: false,
             reconnect_times: 0,
-            chat_data: %{}
+            chat_data: %{},
+            coll_report: %{}
 end

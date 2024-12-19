@@ -91,12 +91,17 @@ defmodule Client do
 
           _ ->
             aid = Process.get(:svr_aid, 0)
-            Logger.debug("send message------------------------------------------------:
-        \t\t avatar: \t #{aid}
-        \t\t account: \t #{Process.get(:account, nil)}
-        \t\t time: \t #{inspect(:calendar.local_time())}
-        \t\t msg: \t #{inspect(msg, pretty: true, limit: :infinity)}
-        ")
+            account = Process.get(:account, nil)
+
+            content =
+              "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t send message------------------------------------------------:
+        \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t avatar: \t #{aid}
+        \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t account: \t #{account}
+        \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t time: \t #{inspect(:calendar.local_time())}
+        \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t msg: \t #{inspect(msg, pretty: true, limit: :infinity)}\n
+        "
+
+            AvatarLog.new_log(account, content)
         end
 
         :ok
