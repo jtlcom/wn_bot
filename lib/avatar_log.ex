@@ -4,7 +4,8 @@ defmodule AvatarLog do
   def new_log(account, content) do
     # Logger.debug(content)
 
-    case is_binary(account) and String.split(account, "_") do
+    case Application.get_env(:whynot_bot, :is_write_avatar) and is_binary(account) and
+           String.split(account, "_") do
       [name_prefix, gid, id_index] ->
         id_range = div(String.to_integer(id_index) - 1, 100)
         id_class = "#{id_range * 100 + 1}..#{(id_range + 1) * 100}"

@@ -18,6 +18,8 @@ config :whynot_bot, SprAdapter,
   is_use: true,
   report_internal: 3000
 
+config :whynot_bot, is_write_avatar: false
+
 config :tzdata, autoupdate: :disabled
 config :logger, handle_otp_reports: true, handle_sasl_reports: true
 config :logger, backends: [:console, {LoggerFileBackend, :log_file}]
