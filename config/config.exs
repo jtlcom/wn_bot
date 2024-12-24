@@ -18,6 +18,8 @@ config :whynot_bot, SprAdapter,
   is_use: true,
   report_internal: 3000
 
+config :whynot_bot, is_write_avatar: false
+
 config :tzdata, autoupdate: :disabled
 config :timex, local_timezone: "Asia/Shanghai"
 config :logger, handle_otp_reports: true, handle_sasl_reports: true
