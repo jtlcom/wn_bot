@@ -26,5 +26,4 @@ defmodule Guid do
   def whereis(name) do
     :global.whereis_name(name)
   end
-
 end

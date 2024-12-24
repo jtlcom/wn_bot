@@ -19,6 +19,7 @@ config :whynot_bot, SprAdapter,
   report_internal: 3000
 
 config :tzdata, autoupdate: :disabled
+config :timex, local_timezone: "Asia/Shanghai"
 config :logger, handle_otp_reports: true, handle_sasl_reports: true
 config :logger, backends: [:console, {LoggerFileBackend, :log_file}]
 

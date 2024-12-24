@@ -2,7 +2,10 @@ defmodule Avatars do
   require Logger
   @name Avatar.DynamicSupervisors
 
-  def start_child({_server_ip, _server_port, account, _gid, _ai} = args, opts \\ []) do
+  def start_child(
+        {_server_ip, _server_port, account, _gid, _ai, _platform, _login_url} = args,
+        opts \\ []
+      ) do
     case DynamicSupervisor.start_child(
            {:via, PartitionSupervisor, {@name, Guid.name(account)}},
            {Avatar, {args, opts}}
@@ -41,9 +44,9 @@ defmodule Avatar do
     GenServer.start_link(__MODULE__, args, opts)
   end
 
-  def init({server_ip, server_port, name, gid, ai}) do
+  def init({server_ip, server_port, name, gid, ai, platform, login_url}) do
     Logger.info(
-      "account: #{inspect(name)}, ip: #{inspect(server_ip)}, pt: #{inspect(server_port)}"
+      "account: #{inspect(name)}, ip: #{inspect(server_ip)}, pt: #{inspect(server_port)}, platform: #{platform}, login_url: #{login_url}"
     )
 
     Process.send_after(self(), :login, 1000)
@@ -52,6 +55,8 @@ defmodule Avatar do
     {:ok,
      %AvatarDef{
        account: name,
+       platform: platform,
+       login_url: login_url,
        gid: gid,
        server_ip: server_ip,
        server_port: server_port,
@@ -64,6 +69,8 @@ defmodule Avatar do
         :login,
         %AvatarDef{
           account: name,
+          platform: platform,
+          login_url: login_url,
           server_ip: server_ip,
           server_port: server_port,
           AI: ai
@@ -71,7 +78,7 @@ defmodule Avatar do
       ) do
     begin_time = Utils.timestamp(:ms)
 
-    case Client.login_post(server_ip, name) do
+    case Client.login_post(name, platform, login_url) do
       {:ok, %{body: body}} ->
         case Jason.decode!(body) do
           %{"login_with_data" => login_with_data, "token" => token} ->
@@ -127,11 +134,20 @@ defmodule Avatar do
         {:noreply, new_player}
 
       error ->
-        Logger.warning("avatar login failed, error:#{error}, state:#{inspect(player)}")
+        Logger.warning("avatar login failed, error:#{inspect(error)}, state:#{inspect(player)}")
         Process.send_after(self(), :login, 1000)
         Process.put(:cmd_dic, -1)
         {:noreply, player}
     end
+  rescue
+    error ->
+      Logger.warning(
+        "avatar login failed, error:#{inspect(error)}, state:#{inspect(player)}, stacktrace:#{inspect(__STACKTRACE__)}"
+      )
+
+      Process.send_after(self(), :login, 1000)
+      Process.put(:cmd_dic, -1)
+      {:noreply, player}
   end
 
   def handle_info({:ping_loop, conn}, %AvatarDef{conn: conn} = player) do

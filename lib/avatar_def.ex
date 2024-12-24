@@ -1,6 +1,8 @@
 defmodule AvatarDef do
   defstruct id: 0,
             account: "",
+            platform: nil,
+            login_url: "",
             name: "",
             server_ip: "",
             server_port: 0,

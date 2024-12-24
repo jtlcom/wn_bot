@@ -1,5 +1,4 @@
 defmodule Router do
-  
   def cast(name, request) when is_atom(name) do
     GenServer.cast(name, request)
   end
@@ -29,5 +28,4 @@ defmodule Router do
   def query(guid, id, path), do: call(guid, {:query, id, path})
 
   def notify(guid, event), do: cast(guid, {:notify, event})
-
 end

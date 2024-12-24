@@ -70,8 +70,6 @@ defmodule AvatarLoop do
         cond do
           result == :see ->
             Client.send_msg(conn, ["see", city_pos, 2, 14])
-            Process.sleep(500)
-            Client.send_msg(conn, ["see", city_pos, 1, 8])
 
           result == :player_info ->
             Client.send_msg(conn, ["data:player_info", aid])
