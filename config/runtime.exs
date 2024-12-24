@@ -1,5 +1,7 @@
 import Config
 
+config :whynot_bot, http_port: 8080
+
 # 压测大师配置
 config :whynot_bot, SprAdapter,
   url: "http://127.0.0.1:18080",
