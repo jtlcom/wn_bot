@@ -99,9 +99,7 @@ defmodule Client do
       end
       |> Jason.encode!()
 
-    HTTPoison.post(login_url, body, [{"Content-Type", "application/x-www-form-urlencoded"}],
-      timeout: 5000
-    )
+    HTTPoison.post(login_url, body, [{"Content-Type", "application/json"}], timeout: 5000)
   end
 
   def send_msg(conn, msg, is_encrypt? \\ true) do

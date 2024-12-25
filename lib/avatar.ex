@@ -126,8 +126,8 @@ defmodule Avatar do
             :error2
         end
 
-      {:error, _error} ->
-        :error1
+      {:error, error} ->
+        error
     end
     |> case do
       {:ok, new_player} ->
