@@ -2,8 +2,15 @@ defmodule Gm do
   def gm(name_prefix, from_id, to_id, params) do
     Enum.each(from_id..to_id, fn this_id ->
       account = name_prefix <> "#{this_id}"
-      this_pid = Avatar.Ets.load_value(account) |> Map.get(:pid)
-      Router.route(this_pid, {:gm, params})
+      
+      case Avatar.Ets.load_value(account) do
+        nil ->
+          :ok
+        data ->
+          this_pid = data |> Map.get(:pid)
+          Router.route(this_pid, {:gm, params})
+      end
+      
     end)
   end
 
