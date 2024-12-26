@@ -28,3 +28,4 @@ whynot_bot-*.tar
 info.log
 /robot
 info.log*
+*.log

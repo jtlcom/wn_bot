@@ -1,6 +1,8 @@
 defmodule AvatarDef do
   defstruct id: 0,
             account: "",
+            platform: nil,
+            login_url: "",
             name: "",
             server_ip: "",
             server_port: 0,
@@ -24,5 +26,7 @@ defmodule AvatarDef do
             system_mails: %{},
             group_mails: %{},
             login_finish: false,
-            reconnect_times: 0
+            reconnect_times: 0,
+            chat_data: %{},
+            coll_report: %{}
 end

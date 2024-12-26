@@ -5,8 +5,9 @@ defmodule Main do
 
   def start(_type, _args) do
     children = [
-      supervisor(Avatar.Supervisor, []),
-      %{id: HttpMgr, start: {HttpMgr, :start_link, [HttpMgr]}}
+      {PartitionSupervisor, child_spec: DynamicSupervisor, name: Avatar.DynamicSupervisors},
+      %{id: HttpMgr, start: {HttpMgr, :start_link, [HttpMgr]}},
+      %{id: SprAdapter, start: {SprAdapter, :start_link, [SprAdapter]}}
     ]
 
     HttpService.start()

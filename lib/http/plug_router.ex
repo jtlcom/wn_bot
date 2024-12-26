@@ -7,9 +7,10 @@ defmodule PlugRouter do
   plug(:dispatch)
 
   get "/" do
-    data = "
-total_aids: #{inspect(Supervisor.which_children(Avatars) |> length)}
+    data =
+      "total_aids: #{inspect(Avatars.number())}
 onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
+
     send_resp(conn, 200, data)
   end
 
@@ -36,12 +37,14 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
           %{
             "ip" => ip,
             "port" => port,
+            "login_url" => login_url,
             "realm_http_port" => realm_http_port,
             "name_prefix" => name_prefix,
             "target_gid" => t_gid,
             "from" => from,
             "to" => to,
-            "AI" => ai
+            "AI" => ai,
+            "platform" => platform
           } ->
             Http.Ets.insert(conn |> Map.get(:remote_ip), %{
               ip: ~c"#{ip}",
@@ -51,7 +54,9 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
               name_prefix: "#{name_prefix}_#{t_gid}_",
               from: from,
               to: to,
-              AI: ai
+              AI: ai,
+              platform: platform,
+              login_url: login_url
             })
 
             send_resp(conn, 200, "ok")
@@ -79,7 +84,15 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
         )
 
         case {body, http_info} do
-          {body, %{ip: ip, port: port, login_prefix: login_prefix, AI: ai}} ->
+          {body,
+           %{
+             ip: ip,
+             port: port,
+             login_prefix: login_prefix,
+             AI: ai,
+             platform: platform,
+             login_url: login_url
+           }} ->
             body
             |> Enum.each(fn
               {this_gid_name, this_nums} when is_integer(this_nums) and this_nums > 0 ->
@@ -90,7 +103,7 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
 
                   HttpMgr.cast(
                     {:apply, StartPressure, :go,
-                     [ip, port, login_prefix, this_gid, 1, this_nums, ai]}
+                     [ip, port, login_prefix, this_gid, 1, this_nums, ai, platform, login_url]}
                   )
                 rescue
                   _ -> Logger.error("/login, this_gid_name: #{inspect(this_gid_name)}")
@@ -99,6 +112,9 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
               _ ->
                 nil
             end)
+
+            total_nums = body |> Map.values() |> Enum.sum()
+            SprAdapter.cast({:start, total_nums})
 
             send_resp(conn, 200, "ok")
 

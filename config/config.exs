@@ -13,6 +13,15 @@ config :whynot_bot, http_port: 9999
 
 config :whynot_bot, recv_buff: 10
 
+config :whynot_bot, SprAdapter,
+  url: "http://192.168.1.129:18080",
+  is_use: true,
+  report_internal: 3000
+
+config :whynot_bot, is_write_avatar: false
+
+config :tzdata, autoupdate: :disabled
+config :timex, local_timezone: "Asia/Shanghai"
 config :logger, handle_otp_reports: true, handle_sasl_reports: true
 config :logger, backends: [:console, {LoggerFileBackend, :log_file}]
 

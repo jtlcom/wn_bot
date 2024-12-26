@@ -130,6 +130,69 @@ defmodule AvatarEvent do
     struct(player, %{system_mails: new_sys_mails})
   end
 
+  def handle_event(
+        [
+          "chat:server_info",
+          _,
+          %{
+            "port" => _port,
+            "ip" => _ip,
+            "password" => _password,
+            "client_id" => _client_id,
+            "topics" => new_topics
+          } = server_info
+        ],
+        %AvatarDef{chat_data: chat_data} = player
+      ) do
+    new_topics =
+      new_topics
+      |> Enum.reduce(Map.get(chat_data, "topics", %{}), fn topic, acc ->
+        if not Map.has_key?(acc, topic) do
+          if String.match?(topic, ~r/^family/) do
+            acc
+            |> Enum.filter(fn {k, v} ->
+              if String.match?(k, ~r/^family/) do
+                conn = Process.get(:mqtt_conn)
+                v && conn != nil && MQTT.Client.unsubscribe(conn, k)
+                false
+              else
+                true
+              end
+            end)
+            |> Map.new()
+          else
+            acc
+          end
+          |> Map.put(topic, false)
+        else
+          acc
+        end
+      end)
+
+    new_chat_data = server_info |> Map.put("topics", new_topics)
+    struct(player, %{chat_data: new_chat_data})
+  end
+
+  def handle_event(["gacha:gacha" | _], player) do
+    SprReport.send_report(player, "gacha:gacha")
+  end
+
+  def handle_event(["mail:detail" | _], player) do
+    SprReport.send_report(player, "mail:detail")
+  end
+
+  def handle_event(["mail:read_all" | _], player) do
+    SprReport.send_report(player, "mail:read_all")
+  end
+
+  def handle_event(["op" | _], player) do
+    SprReport.send_report(player, "op")
+  end
+
+  def handle_event(["chat:send" | _], player) do
+    SprReport.send_report(player, "chat:send")
+  end
+
   def handle_event(_other, player) do
     player
   end

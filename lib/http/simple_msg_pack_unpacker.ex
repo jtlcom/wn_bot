@@ -117,7 +117,7 @@ defmodule SimpleMsgPack.Unpacker do
   end
 
   defp unpack_binary(content, %{binary: true}) do
-    SimpleMsgPack.Bin.new(content)
+    Msgpax.Bin.new(content)
   end
 
   defp unpack_binary(content, _options) do

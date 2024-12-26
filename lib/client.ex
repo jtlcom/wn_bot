@@ -25,33 +25,81 @@ defmodule Client do
     )
   end
 
-  def login_post(server_ip, account) do
-    login_url =
-      case "#{server_ip}" |> String.split(".") do
-        ["192", "168" | _] ->
-          "http://192.168.1.92:8080/auth/whynot"
+  def lan_ip do
+    case :inet.getif() do
+      {:ok, [{ip, _, _} | _]} -> ip |> Tuple.to_list() |> Enum.join(".")
+      _ -> "127.0.0.1"
+    end
+  end
 
-        # 外网测试
-        ["42", "193" | _] ->
-          "http://42.193.252.182:8008/auth/whynot"
+  def login_post(account, platform, login_url) do
+    login_url = "#{login_url}/auth/#{platform}"
 
-        ["159", "75" | _] ->
-          "http://159.75.204.224:8018/auth/whynot"
+    body =
+      case platform do
+        "msdk" ->
+          %{
+            "openid" => account,
+            "token" => account,
+            "claim" => %{
+              "device_id" => account,
+              "device_os" => 1,
+              "app_version" => "0.12.2",
+              "res_version" => "0.12.2.2",
+              "user_agent" => "",
+              "device_language" => "ChineseSimplified",
+              "ipv4" => lan_ip(),
+              "ipv6" => "",
+              "game_language" => 1,
+              "login_channel" => "00000000",
+              "channelid" => 1,
+              "country" => "cn",
+              "open_key" => account,
+              "old_caid" => "",
+              "ad_id" => "-12",
+              "pf" => account,
+              "pf_key" => account,
+              "system_software" => "Android OS 12",
+              "session_type" => "itop",
+              "session_id" => "itopid",
+              "reg_channel" => "00000000",
+              "offer_id" => account,
+              "oaid" => "-12",
+              "new_caid" => "",
+              "device" => "whynot"
+            }
+          }
 
-          # taptap
-          # ["159", "75" | _] ->
-          #   "http://159.75.177.225:8008/auth/whynot"
+        "jx" ->
+          %{
+            "token" => account,
+            "claim" => %{
+              "oaid" => account,
+              "ipv4" => lan_ip(),
+              "ad_id" => account,
+              "device_id" => account,
+              "ipv6" => "",
+              "game_language" => 1,
+              "app_version" => "0.12.2",
+              "system_software" => "Android OS 12",
+              "channelid" => 0,
+              "token" => account,
+              "login_channel" => "0",
+              "device_language" => "ChineseSimplified",
+              "reg_channel" => "0",
+              "res_version" => "0.12.2.2",
+              "device_os" => 1,
+              "country" => "cn",
+              "device" => "whynot"
+            }
+          }
 
-          # _ ->
-          #   "http://192.168.1.92:8080/auth/whynot"
+        _ ->
+          %{"account" => account, "password" => "111111"}
       end
+      |> Jason.encode!()
 
-    HTTPoison.post(
-      login_url,
-      %{"account" => account, "password" => "111111"} |> URI.encode_query(),
-      [{"Content-Type", "application/x-www-form-urlencoded"}],
-      timeout: 5000
-    )
+    HTTPoison.post(login_url, body, [{"Content-Type", "application/json"}], timeout: 5000)
   end
 
   def send_msg(conn, msg, is_encrypt? \\ true) do
@@ -82,13 +130,25 @@ defmodule Client do
         Logger.error("send error is #{inspect(send_error)}")
 
       _ ->
-        aid = Process.get(:svr_aid, 0)
-        Logger.debug("send message------------------------------------------------:
-        \t\t avatar: \t #{aid}
-        \t\t account: \t #{Process.get(:account, nil)}
-        \t\t time: \t #{inspect(:calendar.local_time())}
-        \t\t msg: \t #{inspect(msg, pretty: true, limit: :infinity)}
-        ")
+        case msg do
+          ["ping" | _] ->
+            :ok
+
+          _ ->
+            aid = Process.get(:svr_aid, 0)
+            account = Process.get(:account, nil)
+
+            content =
+              "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t send message------------------------------------------------:
+        \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t avatar: \t #{aid}
+        \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t account: \t #{account}
+        \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t time: \t #{inspect(:calendar.local_time())}
+        \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t msg: \t #{inspect(msg, pretty: true, limit: :infinity)}\n
+        "
+
+            AvatarLog.new_log(account, content)
+        end
+
         :ok
     end
   end
