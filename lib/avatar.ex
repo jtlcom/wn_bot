@@ -272,8 +272,11 @@ defmodule Avatar do
         ["info", ["login:choose_born_state", _id, _params]] ->
           SprReport.new_report("login:choose_born_state", player)
 
-        _ ->
+        ["login", _] ->
           SprReport.new_report("login", player)
+
+        _ ->
+          player
       end
 
     case decoded do

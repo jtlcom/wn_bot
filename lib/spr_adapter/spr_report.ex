@@ -8,7 +8,10 @@ defmodule SprReport do
           c_report |> Map.put("login", %{mod: "RobotLoginNew", start_ms: now_ms})
 
         "login" ->
-          c_report |> Map.put("login", %{mod: "RobotLogin", start_ms: now_ms})
+          cond do
+            Map.has_key?(c_report, "login") -> c_report
+            true -> c_report |> Map.put("login", %{mod: "RobotLogin", start_ms: now_ms})
+          end
 
         "gacha:gacha" ->
           c_report |> Map.put("gacha:gacha", %{mod: "RobotLottery", start_ms: now_ms})
