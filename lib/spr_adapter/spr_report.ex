@@ -28,6 +28,9 @@ defmodule SprReport do
         "chat:send" ->
           c_report |> Map.put("chat:send", %{mod: "RobotChatWorld", start_ms: now_ms})
 
+        "see" ->
+          c_report |> Map.put("see", %{mod: "RobotMapChangeRandom", start_ms: now_ms})
+
         _ ->
           c_report
       end

@@ -697,6 +697,9 @@ defmodule Avatar do
       :aid ->
         [aid]
 
+      :aidstr ->
+        ["#{aid}"]
+
       :gid ->
         [gid]
 
@@ -746,6 +749,9 @@ defmodule Avatar do
 
       :name ->
         ["BOT#{Enum.random(1..1_000_000)}"]
+
+      :short_name ->
+        [Enum.random(1..16_777_215) |> Integer.to_string(16)]
 
       :max_mail_id ->
         [(system_mails != %{} && system_mails |> Map.keys() |> Enum.max()) || 0]
@@ -813,6 +819,9 @@ defmodule Avatar do
           |> struct(%{conn: new_conn, login_finish: false, reconnect_times: 0})
 
         {:ok, new_player}
+
+      {:error, :econnrefused} ->
+        :error
 
       _ ->
         {:failed, struct(player, %{conn: nil, login_finish: false, reconnect_times: r_times + 1})}

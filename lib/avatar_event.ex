@@ -193,6 +193,10 @@ defmodule AvatarEvent do
     SprReport.send_report(player, "chat:send")
   end
 
+  def handle_event(["tile_detail" | _], player) do
+    SprReport.send_report(player, "see")
+  end
+
   def handle_event(_other, player) do
     player
   end

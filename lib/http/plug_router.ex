@@ -465,10 +465,11 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
           {%{"type" => type, "params" => params}, %{name_prefix: name_prefix, from: from, to: to}} ->
             Enum.each(from..to, fn this_id ->
               account = name_prefix <> "#{this_id}"
-              
+
               case Avatar.Ets.load_value(account) do
-                nil -> 
+                nil ->
                   :ok
+
                 data ->
                   this_pid = data |> Map.get(:pid)
                   Router.route(this_pid, {:apply, type, params})

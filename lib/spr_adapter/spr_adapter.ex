@@ -16,7 +16,6 @@ defmodule SprAdapter do
   end
 
   def handle_info(:loop, state) do
-    # Logger.info("HttpMgr HttpMgr HttpMgr")
     Process.send_after(self(), :loop, internal())
     state = SprAdapter.check(state)
     {:noreply, state}
