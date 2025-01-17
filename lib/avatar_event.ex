@@ -197,6 +197,10 @@ defmodule AvatarEvent do
     SprReport.send_report(player, "see")
   end
 
+  def handle_event(["pay:midas_buy_goods" | _], player) do
+    SprReport.send_report(player, "pay:midas_buy_goods")
+  end
+
   def handle_event(_other, player) do
     player
   end

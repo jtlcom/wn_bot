@@ -31,6 +31,9 @@ defmodule SprReport do
         "see" ->
           c_report |> Map.put("see", %{mod: "RobotMapChangeRandom", start_ms: now_ms})
 
+        "pay:midas_buy_goods" ->
+          c_report |> Map.put("pay:midas_buy_goods", %{mod: "RobotMidasBuy", start_ms: now_ms})
+
         _ ->
           c_report
       end
