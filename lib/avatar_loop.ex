@@ -84,7 +84,7 @@ defmodule AvatarLoop do
             end
 
           result == :gm ->
-            Client.send_msg(conn, ["gm", "hero_power", 120])
+            # Client.send_msg(conn, ["gm", "hero_power", 200])
             Client.send_msg(conn, ["gm", "add_hp_pool", 20000])
             Client.send_msg(conn, ["gm", "rich", 20000])
 
