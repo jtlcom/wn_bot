@@ -1,6 +1,7 @@
 defmodule SprAdapter do
   # 腾讯压测大师
   use HandlerWorkerAPI, name: __MODULE__
+  require Logger
 
   def base_config(), do: Application.get_env(:whynot_bot, SprAdapter)
   def url(), do: base_config()[:url]

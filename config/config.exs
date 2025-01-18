@@ -31,6 +31,7 @@ config :logger, :console,
   level: :debug
 
 config :logger, :log_file,
-  path: "./info.log",
+  path: "./logger/info.log",
   rotate: %{max_bytes: 104_857_600, keep: 10},
-  format: "\n$date $time $metadata[$level] $message\n"
+  format: "\n$date $time $metadata[$level] $message\n",
+  level: :debug
