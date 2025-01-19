@@ -847,8 +847,16 @@ defmodule Avatar do
 
   defp mqtt_disconnect(%AvatarDef{chat_data: %{"topics" => topics} = chat_data} = data) do
     case Process.get(:mqtt_conn) do
-      conn_pid when conn_pid != nil -> MQTT.Client.disconnect(conn_pid)
-      _ -> :ok
+      conn_pid when conn_pid != nil ->
+        try do
+          MQTT.Client.disconnect(conn_pid)
+        catch
+          :exit, _reason ->
+            :failed
+        end
+
+      _ ->
+        :ok
     end
 
     if topics != %{} do
@@ -857,6 +865,9 @@ defmodule Avatar do
     else
       data
     end
+  rescue
+    _ ->
+      :failed
   end
 
   defp mqtt_disconnect(data) do
@@ -868,28 +879,37 @@ defmodule Avatar do
            "port" => port,
            "ip" => ip,
            "password" => password,
-           "client_id" => client_id
+           "client_id" => client_id,
+           "username" => username
          }
        }) do
     opt = %{
       client_id: client_id,
-      username: client_id,
+      username: username,
       password: password,
       transport: {:tcp, %{host: ip, port: port}}
     }
 
-    case MQTT.Client.connect(opt) do
-      {:ok, conn_pid, _} ->
-        Process.put(:mqtt_conn, conn_pid)
-        {:ok, conn_pid}
+    try do
+      case MQTT.Client.connect(opt) do
+        {:ok, conn_pid, _} ->
+          Process.put(:mqtt_conn, conn_pid)
+          {:ok, conn_pid}
 
-      error ->
-        Logger.warning(
-          "#{__MODULE__} connect failed, error:#{inspect(error)}, opt:#{inspect(opt)}"
-        )
+        error ->
+          Logger.warning(
+            "#{__MODULE__} connect failed, error:#{inspect(error)}, opt:#{inspect(opt)}"
+          )
 
+          :failed
+      end
+    catch
+      :exit, _reason ->
         :failed
     end
+  rescue
+    _ ->
+      :failed
   end
 
   defp mqtt_connect(_) do
@@ -924,13 +944,18 @@ defmodule Avatar do
               _ -> []
             end)
 
-          case MQTT.Client.subscribe(conn_pid, keys) do
-            {:ok, _} ->
-              new_topics = topics |> Map.new(fn {k, _} -> {k, true} end)
-              new_chat_data = Map.put(chat_data, "topics", new_topics)
-              data |> Map.put(:chat_data, new_chat_data)
+          try do
+            case MQTT.Client.subscribe(conn_pid, keys) do
+              {:ok, _} ->
+                new_topics = topics |> Map.new(fn {k, _} -> {k, true} end)
+                new_chat_data = Map.put(chat_data, "topics", new_topics)
+                data |> Map.put(:chat_data, new_chat_data)
 
-            _ ->
+              _ ->
+                data
+            end
+          catch
+            :exit, _reason ->
               data
           end
 
@@ -940,6 +965,8 @@ defmodule Avatar do
     else
       data
     end
+  rescue
+    _ -> data
   end
 
   defp topics_subscribe(data) do
