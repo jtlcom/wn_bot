@@ -138,6 +138,7 @@ defmodule AvatarEvent do
             "port" => _port,
             "ip" => _ip,
             "password" => _password,
+            "username" => _username,
             "client_id" => _client_id,
             "topics" => new_topics
           } = server_info
