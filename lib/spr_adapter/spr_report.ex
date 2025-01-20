@@ -49,7 +49,7 @@ defmodule SprReport do
     case Map.get(c_report, key) do
       %{mod: mod_name, start_ms: start_ms} ->
         used_ms = now_ms - start_ms
-        end_ms = (used_ms <= 1000 && now_ms) || Enum.random(700..1100)
+        end_ms = (used_ms <= 1000 && now_ms) || start_ms + Enum.random(700..1100)
         SprAdapter.cast({:collect, mod_name, start_ms, end_ms})
         c_report = c_report |> Map.delete(key)
         struct(player, %{coll_report: c_report})
