@@ -135,7 +135,7 @@ defmodule Avatar do
 
       error ->
         Logger.warning("avatar login failed, error:#{inspect(error)}, state:#{inspect(player)}")
-        Process.send_after(self(), :login, 1000)
+        Process.send_after(self(), :login, 5000 + Enum.random(1000..5000))
         Process.put(:cmd_dic, -1)
         {:noreply, player}
     end
@@ -145,7 +145,7 @@ defmodule Avatar do
         "avatar login failed, error:#{inspect(error)}, state:#{inspect(player)}, stacktrace:#{inspect(__STACKTRACE__)}"
       )
 
-      Process.send_after(self(), :login, 1000)
+      Process.send_after(self(), :login, 5000 + Enum.random(1000..5000))
       Process.put(:cmd_dic, -1)
       {:noreply, player}
   end
