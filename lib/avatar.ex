@@ -633,6 +633,10 @@ defmodule Avatar do
     points = Map.get(svr_data, "points")
     troops = Map.get(svr_data, "troops")
 
+    neighbors =
+      Oddr.neighbors(city_pos, 4, false)
+      |> Enum.filter(&(Oddr.direct?(city_pos, &1) and Oddr.distance(city_pos, &1) > 2))
+
     struct(player, %{
       buildings: buildings,
       city_pos: city_pos,
@@ -643,36 +647,16 @@ defmodule Avatar do
       id: id,
       name: name,
       points: points,
-      troops: troops
+      troops: troops,
+      neighbors: neighbors
     })
   end
 
-  def analyze_verse(%AvatarDef{units: units, grids: grids, gid: gid}, type) do
+  def analyze_verse(%AvatarDef{units: units, neighbors: neighbors}, type) do
     case map_size(units) >= 0 and type do
-      :attack ->
-        own_pos_list =
-          grids
-          |> Map.keys()
-          |> Enum.flat_map(fn
-            [x, y] -> [{x, y}]
-            _ -> []
-          end)
-
-        total_pos = Oddr.neighbors(own_pos_list, 1, false)
-        if length(total_pos) > 0, do: Enum.random(total_pos), else: nil
-
-      :forward ->
-        total_pos =
-          units
-          |> Enum.flat_map(fn
-            {pos, %{"gid" => ^gid} = _pos_data} -> [pos]
-            _ -> []
-          end)
-
-        if length(total_pos) > 0, do: Enum.random(total_pos), else: nil
-
-      _ ->
-        nil
+      :attack -> (neighbors != [] && Enum.random(neighbors)) || nil
+      :forward -> (neighbors != [] && Enum.random(neighbors)) || nil
+      _ -> nil
     end
     |> case do
       [_x, _y] = pos -> pos

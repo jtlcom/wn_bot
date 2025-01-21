@@ -28,5 +28,6 @@ defmodule AvatarDef do
             login_finish: false,
             reconnect_times: 0,
             chat_data: %{},
-            coll_report: %{}
+            coll_report: %{},
+            neighbors: []
 end
