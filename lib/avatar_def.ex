@@ -23,6 +23,7 @@ defmodule AvatarDef do
             fixed_units: %{},
             dynamic_units: %{},
             AI: false,
+            loop_action: {},
             system_mails: %{},
             group_mails: %{},
             login_finish: false,

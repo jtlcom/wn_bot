@@ -161,6 +161,7 @@ defmodule Avatar do
           id: aid,
           conn: conn,
           AI: ai,
+          loop_action: loop_action,
           account: name,
           server_ip: server_ip,
           server_port: server_port,
@@ -225,6 +226,22 @@ defmodule Avatar do
             _ ->
               Logger.warning("tcp_connect failed")
               player |> set_loop(1000)
+          end
+
+        ai == :loop_action ->
+          now = Utils.timestamp()
+          Process.put(:last_op_ts, now)
+
+          case loop_action do
+            {type, params, interval} ->
+              new_params = Avatar.trans_params(List.wrap(params), player)
+              Client.send_msg(conn, List.wrap(type) ++ new_params)
+              player = SprReport.new_report(type, player)
+              interval = interval |> max(500)
+              player |> set_loop(interval)
+
+            _ ->
+              player |> set_loop() |> struct(AI: false, loop_action: {})
           end
 
         ai and trunc(Utils.timestamp() - last_ts) >= 15 ->
@@ -432,6 +449,23 @@ defmodule Avatar do
     Client.send_msg(player.conn, List.wrap(type) ++ new_params)
     player = SprReport.new_report(type, player)
     {:noreply, player}
+  end
+
+  def handle_cast(
+        {:loop_action, type, params, interval},
+        %AvatarDef{loop_action: _} = player
+      ) do
+    new_params = Avatar.trans_params(List.wrap(params), player)
+    Client.send_msg(player.conn, List.wrap(type) ++ new_params)
+    player = SprReport.new_report(type, player)
+    interval = interval |> max(500)
+
+    new_player =
+      player
+      |> set_loop(interval)
+      |> struct(%{AI: :loop_action, loop_action: {type, params, interval}})
+
+    {:noreply, new_player}
   end
 
   def handle_cast({:forward, x, y, troop_index}, player) do

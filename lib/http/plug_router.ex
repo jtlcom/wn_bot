@@ -462,6 +462,23 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
         )
 
         case {body, http_info} do
+          {%{"type" => type, "params" => params, "interval" => interval},
+           %{name_prefix: name_prefix, from: from, to: to}} ->
+            Enum.each(from..to, fn this_id ->
+              account = name_prefix <> "#{this_id}"
+
+              case Avatar.Ets.load_value(account) do
+                nil ->
+                  :ok
+
+                data ->
+                  this_pid = data |> Map.get(:pid)
+                  Router.route(this_pid, {:loop_action, type, params, interval})
+              end
+            end)
+
+            send_resp(conn, 200, "ok")
+
           {%{"type" => type, "params" => params}, %{name_prefix: name_prefix, from: from, to: to}} ->
             Enum.each(from..to, fn this_id ->
               account = name_prefix <> "#{this_id}"
