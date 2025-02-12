@@ -119,11 +119,11 @@ defmodule Avatar do
                 {:ok, new_player}
 
               _ ->
-                :error3
+                :Client_tcp_connect_not_ok
             end
 
           _ ->
-            :error2
+            :login_data_jason_err
         end
 
       {:error, error} ->

@@ -12,13 +12,14 @@ import Config
 config :whynot_bot, http_port: 9999
 
 config :whynot_bot, recv_buff: 10
+config :hackney, max_connections: 1000
 
 config :whynot_bot, SprAdapter,
   url: "http://192.168.1.129:18080",
   is_use: true,
   report_internal: 3000
 
-config :whynot_bot, is_write_avatar: false
+config :whynot_bot, is_write_avatar: true
 
 config :tzdata, autoupdate: :disabled
 config :timex, local_timezone: "Asia/Shanghai"
