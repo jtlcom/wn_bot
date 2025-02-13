@@ -22,4 +22,16 @@ defmodule AvatarLog do
         nil
     end
   end
+
+  def avatar_write(aid, account, msg) do
+    content =
+      "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t send message------------------------------------------------:
+\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t avatar: \t #{aid}
+\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t account: \t #{account}
+\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t time: \t #{inspect(:calendar.local_time())}
+\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t msg: \t #{inspect(msg, pretty: true, limit: :infinity)}\n
+"
+
+    AvatarLog.new_log(account, content)
+  end
 end
