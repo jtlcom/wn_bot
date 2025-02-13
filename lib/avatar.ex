@@ -212,16 +212,16 @@ defmodule Avatar do
           end
 
         ai == 2 ->
-          Client.tcp_close(conn)
           player = mqtt_disconnect(player)
 
           case Client.tcp_connect(server_ip, server_port) do
-            {:ok, conn} ->
-              Client.send_msg(conn, ["login", name, aid, token, claim, true], false)
+            {:ok, new_conn} ->
+              Client.tcp_close(conn)
+              Client.send_msg(new_conn, ["login", name, aid, token, claim, true], false)
               now = Utils.timestamp()
               Process.put(:last_op_ts, now)
 
-              player |> struct(conn: conn) |> set_loop(30000)
+              player |> struct(conn: new_conn) |> set_loop(30000)
 
             _ ->
               Logger.warning("tcp_connect failed")
