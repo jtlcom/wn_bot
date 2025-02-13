@@ -2,40 +2,6 @@ defmodule StartPressure do
   require Logger
 
   def go(server_ip, server_port, name_prefix, gid, from_id, to_id, ai, platform, login_url) do
-    case Client.tcp_connect(server_ip, server_port) do
-      {:ok, conn} ->
-        Client.tcp_close(conn)
-
-        strategy(
-          :once_time,
-          server_ip,
-          server_port,
-          name_prefix,
-          gid,
-          from_id,
-          to_id,
-          ai,
-          platform,
-          login_url
-        )
-
-      _ ->
-        Logger.warning("cannot connect #{inspect(server_ip)}:#{inspect(server_port)}")
-    end
-  end
-
-  def strategy(
-        :once_time,
-        server_ip,
-        server_port,
-        name_prefix,
-        gid,
-        from_id,
-        to_id,
-        ai,
-        platform,
-        login_url
-      ) do
     from_id..to_id
     |> Enum.to_list()
     |> Enum.chunk_every(100)

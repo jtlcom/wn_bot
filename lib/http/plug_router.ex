@@ -93,25 +93,33 @@ onlines_count: #{inspect(MsgCounter.get_onlines_count())}"
              platform: platform,
              login_url: login_url
            }} ->
-            body
-            |> Enum.each(fn
-              {this_gid_name, this_nums} when is_integer(this_nums) and this_nums > 0 ->
-                try do
-                  "gid_" <> this_gid = this_gid_name
-                  this_gid = this_gid |> String.to_integer()
-                  Logger.info("this_gid: #{this_gid}, this_nums: #{this_nums}")
+            case Client.tcp_connect(ip, port) do
+              {:ok, conn} ->
+                Client.tcp_close(conn)
 
-                  HttpMgr.cast(
-                    {:apply, StartPressure, :go,
-                     [ip, port, login_prefix, this_gid, 1, this_nums, ai, platform, login_url]}
-                  )
-                rescue
-                  _ -> Logger.error("/login, this_gid_name: #{inspect(this_gid_name)}")
-                end
+                body
+                |> Enum.each(fn
+                  {this_gid_name, this_nums} when is_integer(this_nums) and this_nums > 0 ->
+                    try do
+                      "gid_" <> this_gid = this_gid_name
+                      this_gid = this_gid |> String.to_integer()
+                      Logger.info("this_gid: #{this_gid}, this_nums: #{this_nums}")
+
+                      HttpMgr.cast(
+                        {:apply, StartPressure, :go,
+                         [ip, port, login_prefix, this_gid, 1, this_nums, ai, platform, login_url]}
+                      )
+                    rescue
+                      _ -> Logger.error("/login, this_gid_name: #{inspect(this_gid_name)}")
+                    end
+
+                  _ ->
+                    nil
+                end)
 
               _ ->
-                nil
-            end)
+                Logger.warning("cannot connect #{inspect(ip)}:#{inspect(port)}")
+            end
 
             total_nums = body |> Map.values() |> Enum.sum()
             SprAdapter.cast({:start, total_nums})
