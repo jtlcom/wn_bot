@@ -19,11 +19,11 @@ defmodule CubeDef do
     struct(%__MODULE__{}, q: q, r: r, s: s)
   end
 
-  def new({q, r, s}) do
+  def new([q, r, s]) do
     struct(%__MODULE__{}, q: q, r: r, s: s)
   end
 
-  def new({x, y}) do
+  def new([x, y]) do
     q = trunc(x - (y - (y &&& 1)) / 2)
     r = y
     s = -q - r
@@ -33,21 +33,21 @@ defmodule CubeDef do
   def new(_), do: nil
 
   def new(x, y) do
-    new({x, y})
+    new([x, y])
   end
 
   def to_oddr(%CubeDef{} = cube) do
     x = trunc(cube.q + (cube.r - (cube.r &&& 1)) / 2)
     y = cube.r
-    {x, y}
+    [x, y]
   end
 
   def to_axial(%CubeDef{} = cube) do
-    {cube.q, cube.r}
+    [cube.q, cube.r]
   end
 
   def to_tuple(%CubeDef{} = cube) do
-    {cube.q, cube.r, cube.s}
+    [cube.q, cube.r, cube.s]
   end
 
   def scale(%CubeDef{} = cube, factor) do

@@ -19,7 +19,8 @@ defmodule Oddr do
     Cube.neighbors(CubeDef.new(center), &CubeDef.to_oddr/1)
   end
 
-  def neighbors([_ | _] = pos_list, range, with_center?) do
+  # hint: 机器人这边的坐标不是{} 是[]
+  def neighbors([[_ | _] | _] = pos_list, range, with_center?) do
     Cube.neighbors(Enum.map(pos_list, &CubeDef.new/1), range, with_center?, &CubeDef.to_oddr/1)
   end
 
