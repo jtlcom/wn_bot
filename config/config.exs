@@ -11,12 +11,15 @@ import Config
 
 config :whynot_bot, http_port: 9999
 
-config :whynot_bot, recv_buff: 10
-config :hackney, max_connections: 1000
+# 增大接收缓冲区，提高网络性能
+config :whynot_bot, recv_buff: 20
+
+# Hackney HTTP 客户端连接池配置
+config :hackney, max_connections: 2000
 
 config :whynot_bot, SprAdapter,
   url: "http://192.168.1.129:18080",
-  is_use: true,
+  is_use: false,
   report_internal: 3000
 
 config :whynot_bot, is_write_avatar: true

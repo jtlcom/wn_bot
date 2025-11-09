@@ -58,7 +58,7 @@ defmodule WhynotBot.MixProject do
       {:logger_file_backend, "~> 0.0.12"},
       {:poolboy, ">= 0.0.0"},
       {:changed_reloader,
-       git: "http://wn-server-1:8081/huangbo/changed_reloader", only: :dev, tag: "1.5"},
+       git: "https://github.com/jtlcom/changed_reloader", tag: "1.0.0", only: :dev},
       {:jason, "~> 1.1"},
       {:httpoison, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},

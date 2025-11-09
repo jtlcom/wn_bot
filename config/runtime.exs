@@ -1,6 +1,6 @@
 import Config
 
-config :whynot_bot, http_port: 8080
+config :whynot_bot, http_port: 9999
 
 # 压测大师配置
 config :whynot_bot, SprAdapter,
